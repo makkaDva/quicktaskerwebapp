@@ -10,7 +10,7 @@ interface Job {
   opis: string;
   dnevnica: number;
   user_email: string;
-  broj_telefona: string; // Dodato polje za broj telefona
+  broj_telefona: string;
   created_at: string;
 }
 
@@ -47,8 +47,17 @@ export default function FindJobs() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Dostupni poslovi</h1>
-        
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">Dostupni poslovi</h1>
+          <button
+            onClick={() => router.push('/post-jobs')}
+            className="bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl transition-colors"
+            aria-label="Dodaj novi posao"
+          >
+            +
+          </button>
+        </div>
+      
         {loading ? (
           <div className="text-center">Učitavam...</div>
         ) : (
@@ -69,7 +78,6 @@ export default function FindJobs() {
                   <span className="mr-2">Poslodavac:</span>
                   <span className="font-medium">{job.user_email}</span>
                 </div>
-                {/* Dodat prikaz broja telefona */}
                 <div className="flex items-center text-sm text-gray-500 mt-2">
                   <span className="mr-2">Kontakt telefon:</span>
                   <span className="font-medium">{job.broj_telefona}</span>
