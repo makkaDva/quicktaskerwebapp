@@ -24,7 +24,7 @@ export default function LoginPage() {
       if (error) throw error;
       
       if (data.user) {
-        router.push('/dashboard'); // Redirekcija na dashboard
+        router.push('/dashboard');
       }
 
     } catch (err) {
@@ -37,7 +37,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <form onSubmit={handleLogin} className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-6 text-center">Prijava</h1>
+        {/* Promenjena boja teksta u plavu nijansu dugmeta */}
+        <h1 className="text-2xl font-bold mb-6 text-center text-blue-600">Prijava</h1>
         
         {error && (
           <div className="mb-4 p-2 bg-red-100 text-red-700 rounded-md text-sm">
@@ -54,7 +55,8 @@ export default function LoginPage() {
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            // Dodat text-black za crnu boju teksta
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
             required
           />
         </div>
@@ -68,7 +70,8 @@ export default function LoginPage() {
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            // Dodat text-black za crnu boju teksta
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
             required
           />
         </div>

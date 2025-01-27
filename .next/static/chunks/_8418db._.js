@@ -51,8 +51,6 @@ function FindJobs() {
                         router.push('/');
                         return;
                     }
-                    // Dodajte console.log za debug
-                    console.log('Pokušavam da dohvatim poslove...');
                     const { data, error } = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$supabase$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].from('jobs').select('*').order('created_at', {
                         ascending: false
                     });
@@ -60,7 +58,6 @@ function FindJobs() {
                         console.error('Greška pri dohvatanju poslova:', error);
                         return;
                     }
-                    console.log('Dohvaćeni poslovi:', data); // <-- Proverite podatke
                     setJobs(data || []);
                     setLoading(false);
                 }
@@ -78,7 +75,7 @@ function FindJobs() {
                     children: "Dostupni poslovi"
                 }, void 0, false, {
                     fileName: "[project]/app/find-jobs/page.tsx",
-                    lineNumber: 53,
+                    lineNumber: 50,
                     columnNumber: 9
                 }, this),
                 loading ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -86,7 +83,7 @@ function FindJobs() {
                     children: "Učitavam..."
                 }, void 0, false, {
                     fileName: "[project]/app/find-jobs/page.tsx",
-                    lineNumber: 56,
+                    lineNumber: 53,
                     columnNumber: 11
                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                     className: "grid gap-4",
@@ -103,7 +100,7 @@ function FindJobs() {
                                                     children: job.grad
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/find-jobs/page.tsx",
-                                                    lineNumber: 63,
+                                                    lineNumber: 60,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -111,13 +108,13 @@ function FindJobs() {
                                                     children: job.adresa
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/find-jobs/page.tsx",
-                                                    lineNumber: 64,
+                                                    lineNumber: 61,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/find-jobs/page.tsx",
-                                            lineNumber: 62,
+                                            lineNumber: 59,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -128,13 +125,13 @@ function FindJobs() {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/find-jobs/page.tsx",
-                                            lineNumber: 66,
+                                            lineNumber: 63,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/find-jobs/page.tsx",
-                                    lineNumber: 61,
+                                    lineNumber: 58,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -142,7 +139,7 @@ function FindJobs() {
                                     children: job.opis
                                 }, void 0, false, {
                                     fileName: "[project]/app/find-jobs/page.tsx",
-                                    lineNumber: 70,
+                                    lineNumber: 67,
                                     columnNumber: 17
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -153,7 +150,7 @@ function FindJobs() {
                                             children: "Poslodavac:"
                                         }, void 0, false, {
                                             fileName: "[project]/app/find-jobs/page.tsx",
-                                            lineNumber: 72,
+                                            lineNumber: 69,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -161,35 +158,60 @@ function FindJobs() {
                                             children: job.user_email
                                         }, void 0, false, {
                                             fileName: "[project]/app/find-jobs/page.tsx",
-                                            lineNumber: 73,
+                                            lineNumber: 70,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/find-jobs/page.tsx",
-                                    lineNumber: 71,
+                                    lineNumber: 68,
+                                    columnNumber: 17
+                                }, this),
+                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                    className: "flex items-center text-sm text-gray-500 mt-2",
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                            className: "mr-2",
+                                            children: "Kontakt telefon:"
+                                        }, void 0, false, {
+                                            fileName: "[project]/app/find-jobs/page.tsx",
+                                            lineNumber: 74,
+                                            columnNumber: 19
+                                        }, this),
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                            className: "font-medium",
+                                            children: job.broj_telefona
+                                        }, void 0, false, {
+                                            fileName: "[project]/app/find-jobs/page.tsx",
+                                            lineNumber: 75,
+                                            columnNumber: 19
+                                        }, this)
+                                    ]
+                                }, void 0, true, {
+                                    fileName: "[project]/app/find-jobs/page.tsx",
+                                    lineNumber: 73,
                                     columnNumber: 17
                                 }, this)
                             ]
                         }, job.id, true, {
                             fileName: "[project]/app/find-jobs/page.tsx",
-                            lineNumber: 60,
+                            lineNumber: 57,
                             columnNumber: 15
                         }, this))
                 }, void 0, false, {
                     fileName: "[project]/app/find-jobs/page.tsx",
-                    lineNumber: 58,
+                    lineNumber: 55,
                     columnNumber: 11
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/app/find-jobs/page.tsx",
-            lineNumber: 52,
+            lineNumber: 49,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/app/find-jobs/page.tsx",
-        lineNumber: 51,
+        lineNumber: 48,
         columnNumber: 5
     }, this);
 }
