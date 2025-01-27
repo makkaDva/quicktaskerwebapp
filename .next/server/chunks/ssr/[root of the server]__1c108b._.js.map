@@ -1,0 +1,11 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 47, "column": 0}, "map": {"version":3,"sources":["file://C%3A/Users/Lenovo/Desktop/Projekat/quicktaskerwebapp/app/lib/supabase.js"],"sourcesContent":["// Импортујте Supabase клијент\r\nimport { createClient } from '@supabase/supabase-js'\r\n\r\n// Иницијализујте Supabase клијент са env променљивима\r\nconst supabase = createClient(\r\n  process.env.NEXT_PUBLIC_SUPABASE_URL,\r\n  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY\r\n)\r\n\r\n// Експортујте клијент за употребу у другим фајловима\r\nexport default supabase"],"names":[],"mappings":"AAAA,8BAA8B;;;;AAC9B;;AAEA,sDAAsD;AACtD,MAAM,WAAW,CAAA,GAAA,uLAAA,CAAA,eAAY,AAAD;uCAMb"}},
+    {"offset": {"line": 56, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}},
+    {"offset": {"line": 62, "column": 0}, "map": {"version":3,"sources":["file://C%3A/Users/Lenovo/Desktop/Projekat/quicktaskerwebapp/app/page.tsx"],"sourcesContent":["import Image from \"next/image\";\nimport supabase from \"./lib/supabase\";\nexport default function Home() {\n  //return (\n    // Тест 1: Провера да ли се Supabase клијент учитао\n  console.log('Supabase:', supabase)\n\n  // Тест 2: Дохват података из базе\n  const testDb = async () => {\n    const { data, error } = await supabase\n      .from('jobs')\n      .select('*')\n      .limit(1)\n    \n    console.log('Подаци:', data)\n    console.log('Грешка:', error)\n  }\n\n  return (\n    <div>\n      <h1>Тест Супабасе</h1>\n      <button onClick={testDb}>Тестирај базу</button>\n    </div>\n  )\n}\n"],"names":[],"mappings":";;;;AACA;;;AACe,SAAS;IACtB,UAAU;IACR,mDAAmD;IACrD,QAAQ,GAAG,CAAC,aAAa,sHAAA,CAAA,UAAQ;IAEjC,kCAAkC;IAClC,MAAM,SAAS;QACb,MAAM,EAAE,IAAI,EAAE,KAAK,EAAE,GAAG,MAAM,sHAAA,CAAA,UAAQ,CACnC,IAAI,CAAC,QACL,MAAM,CAAC,KACP,KAAK,CAAC;QAET,QAAQ,GAAG,CAAC,WAAW;QACvB,QAAQ,GAAG,CAAC,WAAW;IACzB;IAEA,qBACE,8OAAC;;0BACC,8OAAC;0BAAG;;;;;;0BACJ,8OAAC;gBAAO,SAAS;0BAAQ;;;;;;;;;;;;AAG/B"}},
+    {"offset": {"line": 103, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}},
+    {"offset": {"line": 114, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":""}},
+    {"offset": {"line": 114, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}}]
+}
