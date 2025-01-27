@@ -10,6 +10,7 @@ interface Job {
   opis: string;
   dnevnica: number;
   user_email: string;
+  broj_telefona: string; // Dodato polje za broj telefona
   created_at: string;
 }
 
@@ -25,25 +26,21 @@ export default function FindJobs() {
         router.push('/');
         return;
       }
-  
-      // Dodajte console.log za debug
-      console.log('Pokušavam da dohvatim poslove...');
-  
+
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
         .order('created_at', { ascending: false });
-  
+
       if (error) {
         console.error('Greška pri dohvatanju poslova:', error);
         return;
       }
-  
-      console.log('Dohvaćeni poslovi:', data); // <-- Proverite podatke
+
       setJobs(data || []);
       setLoading(false);
     };
-  
+
     fetchJobs();
   }, []);
 
@@ -71,6 +68,11 @@ export default function FindJobs() {
                 <div className="flex items-center text-sm text-gray-500">
                   <span className="mr-2">Poslodavac:</span>
                   <span className="font-medium">{job.user_email}</span>
+                </div>
+                {/* Dodat prikaz broja telefona */}
+                <div className="flex items-center text-sm text-gray-500 mt-2">
+                  <span className="mr-2">Kontakt telefon:</span>
+                  <span className="font-medium">{job.broj_telefona}</span>
                 </div>
               </div>
             ))}
