@@ -15,10 +15,11 @@ export default function Dashboard() {
   }, []);
 
   // U handleOptionSelect funkciji promenite:
-const handleOptionSelect = (option: string) => {
-  if(option === 'oglasavanje') router.push('/post-jobs');
-  if(option === 'trazim') router.push('/find-jobs');
-};
+  const handleOptionSelect = (option: string) => {
+    if(option === 'oglasavanje') router.push('/auth/post-jobs');
+    if(option === 'trazim') router.push('/auth/find-jobs');
+  };
+  
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">

@@ -15,7 +15,7 @@ interface Job {
 }
 
 export default function FindJobs() {
-  const router = useRouter();
+  const router = useRouter(); 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +42,7 @@ export default function FindJobs() {
     };
 
     fetchJobs();
-  }, []);
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -50,7 +50,7 @@ export default function FindJobs() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Dostupni poslovi</h1>
           <button
-            onClick={() => router.push('/post-jobs')}
+            onClick={() => router.push('/auth/post-jobs')}
             className="bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl transition-colors"
             aria-label="Dodaj novi posao"
           >
@@ -59,7 +59,7 @@ export default function FindJobs() {
         </div>
       
         {loading ? (
-          <div className="text-center">Učitavam...</div>
+          <div className="text-center">Loading...</div>
         ) : (
           <div className="grid gap-4">
             {jobs.map((job) => (
@@ -70,16 +70,16 @@ export default function FindJobs() {
                     <p className="text-gray-600">{job.adresa}</p>
                   </div>
                   <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-                    {job.dnevnica} RSD/dan
+                    {job.dnevnica} RSD/day
                   </span>
                 </div>
                 <p className="text-gray-700 mb-4">{job.opis}</p>
                 <div className="flex items-center text-sm text-gray-500">
-                  <span className="mr-2">Poslodavac:</span>
+                  <span className="mr-2">Job offerer:</span>
                   <span className="font-medium">{job.user_email}</span>
                 </div>
                 <div className="flex items-center text-sm text-gray-500 mt-2">
-                  <span className="mr-2">Kontakt telefon:</span>
+                  <span className="mr-2">Phone number:</span>
                   <span className="font-medium">{job.broj_telefona}</span>
                 </div>
               </div>
