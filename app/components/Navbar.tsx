@@ -62,12 +62,15 @@ export default function Navbar() {
   return (
     <nav className="bg-white shadow-sm py-3 px-6 flex justify-between items-center">
       {/* Logo */}
-      <Image 
+      <Link href="/auth/find-jobs">
+      <Image
         src="/kvikyLogo.png" 
         alt="QuickTasker Logo" 
         width={100} 
         height={40} 
       />
+      </Link>
+      
 
       {/* Right-side controls */}
       <div className="flex items-center gap-4">

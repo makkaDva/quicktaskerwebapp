@@ -24,7 +24,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Dobrodosli na Quicktasker</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">Choose your goal</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Kartica za oglašavanje poslova */}
@@ -39,8 +39,8 @@ export default function Dashboard() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-800">Oglasavam poslove</h2>
-                <p className="text-gray-600 mt-1">Postavite nove poslove i upravljajte oglasima</p>
+                <h2 className="text-xl font-semibold text-gray-800">I advertise jobs</h2>
+                <p className="text-gray-600 mt-1">Post new jobs and make it easier for others to find theirs</p>
               </div>
             </div>
           </div>
@@ -57,22 +57,12 @@ export default function Dashboard() {
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-800">Trazim posao</h2>
-                <p className="text-gray-600 mt-1">Pronađite poslove koji odgovaraju vašim kvalifikacijama</p>
+                <h2 className="text-xl font-semibold text-gray-800">I'm looking for a job</h2>
+                <p className="text-gray-600 mt-1">Find jobs that match your qualifications and interests</p>
               </div>
             </div>
           </div>
         </div>
-
-        <button 
-          onClick={async () => {
-            await supabase.auth.signOut();
-            router.push('/');
-          }}
-          className="w-full md:w-auto px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-        >
-          Odjavi se
-        </button>
       </div>
     </div>
   );

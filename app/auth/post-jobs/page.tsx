@@ -93,11 +93,11 @@ export default function PostJobs() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-black mb-8">Postavi novi oglas</h1>
+        <h1 className="text-3xl font-bold text-black mb-8">Post job offer</h1>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-black font-medium mb-2">Grad *</label>
+            <label className="block text-black font-medium mb-2">City *</label>
             <input
               type="text"
               name="grad"
@@ -109,7 +109,7 @@ export default function PostJobs() {
           </div>
 
           <div>
-            <label className="block text-black font-medium mb-2">Adresa *</label>
+            <label className="block text-black font-medium mb-2">Address *</label>
             <input
               type="text"
               name="adresa"
@@ -121,7 +121,7 @@ export default function PostJobs() {
           </div>
 
           <div>
-            <label className="block text-black font-medium mb-2">Broj telefona *</label>
+            <label className="block text-black font-medium mb-2">Phone number *</label>
             <input
               type="tel"
               name="broj_telefona"
@@ -133,7 +133,7 @@ export default function PostJobs() {
           </div>
 
           <div>
-            <label className="block text-black font-medium mb-2">Dnevnica (RSD) *</label>
+            <label className="block text-black font-medium mb-2">Wage (RSD) *</label>
             <input
               type="number"
               name="dnevnica"
@@ -158,7 +158,7 @@ export default function PostJobs() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+            className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400"
           >
             {loading ? 'Posting...' : 'Post job offer'}
           </button>
