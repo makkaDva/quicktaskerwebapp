@@ -24,7 +24,7 @@ export default function PostJobs() {
       }
     };
     checkAuth();
-  }, []);
+  }, [router]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -75,7 +75,7 @@ export default function PostJobs() {
 
       if (error) throw error;
 
-      router.push('/find-jobs');
+      router.push('/auth/find-jobs');
     } catch (error: any) {
       console.error('Full error:', error);
       alert(`Greška: ${error.message || 'Došlo je do neočekivane greške'}`);
@@ -145,7 +145,7 @@ export default function PostJobs() {
           </div>
 
           <div>
-            <label className="block text-black font-medium mb-2">Opis posla *</label>
+            <label className="block text-black font-medium mb-2">Job Descrition *</label>
             <textarea
               name="opis"
               value={formData.opis}
@@ -160,7 +160,7 @@ export default function PostJobs() {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
           >
-            {loading ? 'Postavljanje...' : 'Postavi posao'}
+            {loading ? 'Posting...' : 'Post job offer'}
           </button>
         </form>
       </div>

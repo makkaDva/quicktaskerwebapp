@@ -24,7 +24,7 @@ export default function LoginPage() {
       if (error) throw error;
       
       if (data.user) {
-        router.push('/dashboard');
+        router.push('/auth/dashboard');
       }
 
     } catch (err) {
@@ -37,8 +37,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <form onSubmit={handleLogin} className="bg-white p-8 rounded-lg shadow-md w-96">
-        {/* Promenjena boja teksta u plavu nijansu dugmeta */}
-        <h1 className="text-2xl font-bold mb-6 text-center text-blue-600">Prijava</h1>
+        {/* Promenjena boja teksta u zelenu */}
+        <h1 className="text-2xl font-bold mb-6 text-center text-[#1fd655]">Welcome to Kviky</h1>
         
         {error && (
           <div className="mb-4 p-2 bg-red-100 text-red-700 rounded-md text-sm">
@@ -79,15 +79,15 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-300"
+          className="w-full bg-[#1fd655] text-white py-2 px-4 rounded-md hover:bg-[#1aa34a] transition-colors disabled:opacity-50"
         >
-          {loading ? 'Prijavljujem...' : 'Prijavi se'}
+          {loading ? 'Loading...' : 'SIGN IN'}
         </button>
 
         <p className="mt-4 text-sm text-center text-gray-600">
-          Nemate nalog?{' '}
-          <a href="/register" className="text-blue-600 hover:underline">
-            Registrujte se
+          Don't have an account?{' '}
+          <a href="/register" className="text-[#1fd655] hover:underline">
+            Sign up
           </a>
         </p>
       </form>
