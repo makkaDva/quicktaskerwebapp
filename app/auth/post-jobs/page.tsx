@@ -145,7 +145,7 @@ export default function PostJobs() {
           </div>
 
           <div>
-            <label className="block text-black font-medium mb-2">Job Descrition *</label>
+            <label className="block text-black font-medium mb-2">Job Description *</label>
             <textarea
               name="opis"
               value={formData.opis}

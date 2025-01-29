@@ -47,16 +47,6 @@ export default function FindJobs() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Dostupni poslovi</h1>
-          <button
-            onClick={() => router.push('/auth/post-jobs')}
-            className="bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl transition-colors"
-            aria-label="Dodaj novi posao"
-          >
-            +
-          </button>
-        </div>
       
         {loading ? (
           <div className="text-center">Loading...</div>
