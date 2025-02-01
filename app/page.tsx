@@ -63,7 +63,7 @@ export default function LoginPage() {
 
         <div className="mb-6">
           <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Lozinka
+            Password
           </label>
           <input
             type="password"
@@ -86,7 +86,7 @@ export default function LoginPage() {
 
         <p className="mt-4 text-sm text-center text-gray-600">
           Don't have an account?{' '}
-          <a href="/register" className="text-[#1fd655] hover:underline">
+          <a href="/register-page" className="text-[#1fd655] hover:underline">
             Sign up
           </a>
         </p>
