@@ -63,12 +63,12 @@ export default function Navbar() {
     <nav className="bg-white shadow-sm py-3 px-6 flex justify-between items-center">
       {/* Logo */}
       <Link href="/auth/find-jobs">
-      <Image
-        src="/kvikyLogo.png" 
-        alt="QuickTasker Logo" 
-        width={100} 
-        height={40} 
-      />
+        <Image
+          src="/kvikyLogo.png" 
+          alt="QuickTasker Logo" 
+          width={100} 
+          height={40} 
+        />
       </Link>
       
 
@@ -102,7 +102,7 @@ export default function Navbar() {
           {isDropdownOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50">
               <Link
-                href="/profile"
+                href="/auth/view-profile"
                 onClick={() => setIsDropdownOpen(false)}
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
               >
