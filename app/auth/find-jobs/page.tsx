@@ -19,7 +19,16 @@ export default function FindJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState<'newest' | 'oldest'>('newest');
   const router = useRouter();
+
+  // Sort jobs based on the selected option
+  const sortedJobs = [...jobs].sort((a, b) => {
+    const dateA = new Date(a.created_at).getTime();
+    const dateB = new Date(b.created_at).getTime();
+    
+    return sortOption === 'newest' ? dateB - dateA : dateA - dateB;
+  });
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -57,7 +66,7 @@ export default function FindJobs() {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Find Jobs</h1>
         <div className="space-y-6">
-          {jobs.map((job) => (
+          {sortedJobs.map((job) => (
             <div
               key={job.id} // Use job.id as the key
               onClick={() => router.push(`/auth/view-job/${job.id}`)}
