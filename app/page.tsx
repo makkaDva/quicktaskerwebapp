@@ -1,105 +1,33 @@
 "use client";
-import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import supabase from "../lib/supabase";
-import { FaGoogle } from "react-icons/fa";
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+import { useRouter } from 'next/navigation';
+
+export default function HomePage() {
   const router = useRouter();
 
-  const handleLogin = async (e: FormEvent) => {
-    // ... keep existing handleLogin function unchanged ...
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-
-      if (error) throw error;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Google login failed');
-    }
-  };
-
   return (
-    <div className="auth-container">
-      <form className="auth-form" onSubmit={handleLogin}>
-        <h1 className="text-3xl font-bold text-center text-green-600 mb-8">Welcome to Kviky</h1>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-green-50 px-6 text-center">
+      <h1 className="text-5xl font-bold text-green-700 mb-4">Welcome to Kviky</h1>
+      <p className="text-lg text-gray-700 max-w-2xl mb-6">
+        Finding quick jobs has never been easier! Kviky connects job seekers with daily wage opportunities in real-time. Whether you need an extra pair of hands or you're looking for work, Kviky is here to help!
+      </p>
 
-        {error && (
-          <div className="auth-error">
-            {error}
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          className="social-auth-button"
-          disabled={loading}
-        >
-          <FaGoogle className="text-lg" />
-          Continue with Google
-        </button>
-
-        <div className="auth-divider">
-          <span className="bg-white dark:bg-gray-800 px-2">Or sign in with email</span>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              className="auth-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              className="auth-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-        </div>
-
-        <button
-        type="submit"
-        className="auth-button bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600"
-        disabled={loading}
-         >
-       {loading ? 'Loading...' : 'SIGN IN'}
-        </button>
-
-
-
-        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-          Don't have an account?{' '}
-          <a href="/register-page" className="auth-link">
-            Sign up
-          </a>
+      <div className="bg-white shadow-lg rounded-2xl p-8 max-w-3xl">
+        <h2 className="text-3xl font-semibold text-green-600 mb-4">Who We Are</h2>
+        <p className="text-gray-600 mb-4">
+          Kviky is the ultimate platform for those seeking short-term jobs and employers who need quick assistance. No lengthy hiring process—just instant connections to get the job done!
         </p>
-      </form>
+        <p className="text-gray-600 mb-4">
+          We bridge the gap between job seekers and businesses, making job hunting fast, simple, and reliable. Start earning today with Kviky!
+        </p>
+      </div>
+      
+      <button
+        onClick={() => router.push('/login')}
+        className="mt-6 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-full shadow-md transition duration-300"
+      >
+        Proceed to Sign In Page
+      </button>
     </div>
   );
 }

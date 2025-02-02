@@ -2,17 +2,14 @@
 import { useState, useEffect } from 'react';
 import supabase from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { FaMapMarkerAlt, FaCalendarAlt, FaEnvelope, FaPhoneAlt, FaEuroSign } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaCalendarAlt, FaEuroSign } from 'react-icons/fa';
 
 interface Job {
-  id: string; // Change from uid to id
+  id: string;
   grad: string;
   adresa: string;
-  opis: string;
   dnevnica: number;
   created_at: string;
-  user_email: string;
-  broj_telefona: string;
 }
 
 export default function FindJobs() {
@@ -35,7 +32,7 @@ export default function FindJobs() {
       try {
         const { data, error } = await supabase
           .from('jobs')
-          .select('*');
+          .select('id, grad, adresa, dnevnica, created_at'); // Fetch only required fields
 
         if (error) throw error;
 
@@ -78,7 +75,6 @@ export default function FindJobs() {
                   <FaMapMarkerAlt className="text-green-600" />
                   <p>{job.adresa}</p>
                 </div>
-                <p className="text-gray-700">{job.opis}</p>
                 <div className="flex items-center space-x-2">
                   <FaEuroSign className="text-green-600" />
                   <p>{job.dnevnica} € per day</p>
@@ -86,10 +82,6 @@ export default function FindJobs() {
                 <div className="flex items-center space-x-2">
                   <FaCalendarAlt className="text-green-600" />
                   <p>Posted on: {new Date(job.created_at).toLocaleDateString()}</p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <FaEnvelope className="text-green-600" />
-                  <p>{job.user_email}</p>
                 </div>
               </div>
             </div>
