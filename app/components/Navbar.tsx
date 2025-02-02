@@ -8,11 +8,11 @@ import Link from 'next/link';
 export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [userFullName, setUserFullName] = useState('');
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
-  // Set mounted to true on client-side after first render
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -22,6 +22,7 @@ export default function Navbar() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          setUserFullName(user.user_metadata.full_name)
           setUserEmail(user.email || '');
         } else {
           router.push('/');
@@ -61,7 +62,6 @@ export default function Navbar() {
     router.push('/auth/post-jobs');
   };
 
-  // Render a placeholder that exactly matches the server markup until mounted.
   if (loading || !mounted) {
     return (
       <div className="bg-white shadow-sm py-3 px-6 text-center">
@@ -77,8 +77,8 @@ export default function Navbar() {
         <Image
           src="/kvikyLogo.png"
           alt="QuickTasker Logo"
-          width={100}
-          height={40}
+          width={120}
+          height={60}
           className="object-contain"
         />
       </Link>
@@ -88,10 +88,9 @@ export default function Navbar() {
         {/* New Job Button */}
         <button
           onClick={handleCreateJob}
-          className="bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-2xl transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
-          aria-label="Add New Job"
+          className="bg-green-500 hover:bg-green-600 text-white px-5 py-1.5 rounded-full text-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
         >
-          +
+          Post job offer
         </button>
 
         {/* Profile Dropdown */}
@@ -108,7 +107,7 @@ export default function Navbar() {
               className="rounded-full border border-gray-300 dark:border-gray-600"
             />
             <span className="hidden md:inline text-gray-700 dark:text-gray-300 font-medium">
-              {userEmail}
+              {userFullName}
             </span>
           </button>
 

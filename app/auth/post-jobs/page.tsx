@@ -10,7 +10,8 @@ export default function PostJobs() {
     adresa: '',
     broj_telefona: '',
     dnevnica: '',
-    opis: ''
+    opis: '',
+    broj_radnika: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,7 @@ export default function PostJobs() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     const phoneRegex = /^\+?[0-9\s-]{6,}$/;
-
+  
     if (!formData.grad.trim()) newErrors.grad = 'Grad je obavezan';
     if (!formData.adresa.trim()) newErrors.adresa = 'Adresa je obavezna';
     if (!formData.broj_telefona.trim()) {
@@ -43,7 +44,12 @@ export default function PostJobs() {
       newErrors.dnevnica = 'Mora biti broj';
     }
     if (!formData.opis.trim()) newErrors.opis = 'Opis posla je obavezan';
-
+    if (!formData.broj_radnika.trim()) {
+      newErrors.broj_radnika = 'Broj radnika je obavezan';
+    } else if (isNaN(Number(formData.broj_radnika))) {
+      newErrors.broj_radnika = 'Mora biti broj';
+    }
+  
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -51,7 +57,7 @@ export default function PostJobs() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-
+  
     setLoading(true);
     
     try {
@@ -60,7 +66,7 @@ export default function PostJobs() {
       if (authError || !user) {
         throw new Error('Niste autentifikovani');
       }
-
+  
       const { data, error } = await supabase
         .from('jobs')
         .insert([{
@@ -69,12 +75,13 @@ export default function PostJobs() {
           broj_telefona: formData.broj_telefona,
           dnevnica: Number(formData.dnevnica),
           opis: formData.opis,
+          broj_radnika: Number(formData.broj_radnika), // Add this line
           user_email: user.email
         }])
         .select();
-
+  
       if (error) throw error;
-
+  
       router.push('/auth/find-jobs');
     } catch (error: any) {
       console.error('Full error:', error);
@@ -133,7 +140,7 @@ export default function PostJobs() {
           </div>
 
           <div>
-            <label className="block text-black font-medium mb-2">Wage (RSD) *</label>
+            <label className="block text-black font-medium mb-2">Wage (€) *</label>
             <input
               type="number"
               name="dnevnica"
@@ -143,6 +150,18 @@ export default function PostJobs() {
             />
             {errors.dnevnica && <p className="text-red-500 text-sm mt-1">{errors.dnevnica}</p>}
           </div>
+
+          <div>
+              <label className="block text-black font-medium mb-2">Number of Workers Needed *</label>
+              <input
+                type="number"
+               name="broj_radnika"
+                value={formData.broj_radnika}
+               onChange={handleChange}
+                className={`w-full p-3 border rounded-lg text-black ${errors.broj_radnika ? 'border-red-500' : 'border-gray-300'}`}
+             />
+              {errors.broj_radnika && <p className="text-red-500 text-sm mt-1">{errors.broj_radnika}</p>}
+            </div>
 
           <div>
             <label className="block text-black font-medium mb-2">Job Description *</label>
