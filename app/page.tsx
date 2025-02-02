@@ -31,75 +31,71 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form onSubmit={handleLogin} className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-6 text-center text-[#1fd655]">Welcome to Kviky</h1>
-        
+    <div className="auth-container">
+      <form className="auth-form" onSubmit={handleLogin}>
+        <h1 className="text-3xl font-bold text-center text-green-600 mb-8">Welcome to Kviky</h1>
+
         {error && (
-          <div className="mb-4 p-2 bg-red-100 text-red-700 rounded-md text-sm">
+          <div className="auth-error">
             {error}
           </div>
         )}
 
-        {/* Google Login Button */}
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 mb-4 flex items-center justify-center gap-2"
+          className="social-auth-button"
+          disabled={loading}
         >
           <FaGoogle className="text-lg" />
           Continue with Google
         </button>
 
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or sign in with email</span>
-          </div>
+        <div className="auth-divider">
+          <span className="bg-white dark:bg-gray-800 px-2">Or sign in with email</span>
         </div>
 
-        {/* Keep existing email/password fields */}
-        <div className="mb-4">
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-            required
-          />
-        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              className="auth-input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-        <div className="mb-6">
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-            required
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Password
+            </label>
+            <input
+              type="password"
+              className="auth-input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
         </div>
 
         <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-[#1fd655] text-white py-2 px-4 rounded-md hover:bg-[#1aa34a] transition-colors disabled:opacity-50"
-        >
-          {loading ? 'Loading...' : 'SIGN IN'}
+        type="submit"
+        className="auth-button bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600"
+        disabled={loading}
+         >
+       {loading ? 'Loading...' : 'SIGN IN'}
         </button>
-        
-        <p className="mt-4 text-sm text-center text-gray-600">
+
+
+
+        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
           Don't have an account?{' '}
-          <a href="/register-page" className="text-[#1fd655] hover:underline">
+          <a href="/register-page" className="auth-link">
             Sign up
           </a>
         </p>

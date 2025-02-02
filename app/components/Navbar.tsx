@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { useState, useEffect } from 'react';
 import supabase from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -9,7 +9,13 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  // Set mounted to true on client-side after first render
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -55,62 +61,67 @@ export default function Navbar() {
     router.push('/auth/post-jobs');
   };
 
-  if (loading) {
-    return <div className="bg-white shadow-sm py-3 px-6">Loading...</div>;
+  // Render a placeholder that exactly matches the server markup until mounted.
+  if (loading || !mounted) {
+    return (
+      <div className="bg-white shadow-sm py-3 px-6 text-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
-    <nav className="bg-white shadow-sm py-3 px-6 flex justify-between items-center">
+    <nav className="bg-white dark:bg-gray-900 shadow-md py-3 px-6 flex justify-between items-center transition-colors">
       {/* Logo */}
-      <Link href="/auth/find-jobs">
+      <Link href="/auth/find-jobs" className="flex items-center">
         <Image
-          src="/kvikyLogo.png" 
-          alt="QuickTasker Logo" 
-          width={100} 
-          height={40} 
+          src="/kvikyLogo.png"
+          alt="QuickTasker Logo"
+          width={100}
+          height={40}
+          className="object-contain"
         />
       </Link>
-      
 
       {/* Right-side controls */}
       <div className="flex items-center gap-4">
         {/* New Job Button */}
         <button
           onClick={handleCreateJob}
-          className="bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl transition-colors"
-          aria-label="Dodaj novi posao"
+          className="bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-2xl transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+          aria-label="Add New Job"
         >
           +
         </button>
 
         {/* Profile Dropdown */}
         <div className="relative profile-dropdown">
-          <button 
+          <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 focus:outline-none"
           >
-            <Image 
-              src="/basicProfilePicture.jpg" 
-              alt="Profile" 
-              width={40} 
-              height={40} 
-              className="rounded-full"
+            <Image
+              src="/basicProfilePicture.jpg"
+              alt="Profile"
+              width={40}
+              height={40}
+              className="rounded-full border border-gray-300 dark:border-gray-600"
             />
-            <span className="text-gray-600">{userEmail}</span>
+            <span className="hidden md:inline text-gray-700 dark:text-gray-300 font-medium">
+              {userEmail}
+            </span>
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50">
-              <Link
-                href="/auth/view-profile"
-                onClick={() => setIsDropdownOpen(false)}
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-              >
-                View Profile
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-2 z-50 transition ease-in-out duration-150">
+              <Link href="/auth/view-profile" onClick={() => setIsDropdownOpen(false)}>
+                <div className="block px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">
+                  View Profile
+                </div>
               </Link>
               <button
                 onClick={handleSignOut}
-                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                className="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
               >
                 Sign Out
               </button>
