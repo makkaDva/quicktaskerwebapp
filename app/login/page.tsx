@@ -73,9 +73,14 @@ export default function LoginPage() {
           Continue with Google
         </button>
 
-        <div className="auth-divider">
-          <span className="bg-white dark:bg-gray-800 px-2">Or sign in with email</span>
-        </div>
+        <div className="relative flex items-center w-full my-4">
+  <div className="flex-grow border-t border-gray-300"></div>
+  <span className="px-3 bg-white dark:bg-gray-800 text-gray-500 text-sm">
+    Or sign in with email
+  </span>
+  <div className="flex-grow border-t border-gray-300"></div>
+</div>
+
 
         <div className="space-y-4">
           <div>

@@ -13,6 +13,7 @@ export default function PostJobs() {
     opis: '',
     broj_radnika: ''
   });
+  const [wageType, setWageType] = useState<'per day' | 'per hour'>('per day'); // New state for wage type
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
@@ -26,6 +27,18 @@ export default function PostJobs() {
     };
     checkAuth();
   }, [router]);
+
+  const fetchCoordinates = async (address: string) => {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+    const data = await response.json();
+    if (data && data.length > 0) {
+      return {
+        latitude: parseFloat(data[0].lat),
+        longitude: parseFloat(data[0].lon)
+      };
+    }
+    return null;
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -66,7 +79,12 @@ export default function PostJobs() {
       if (authError || !user) {
         throw new Error('Niste autentifikovani');
       }
-  
+
+      const coordinates = await fetchCoordinates(`${formData.adresa}, ${formData.grad}`);
+      if (!coordinates) {
+        throw new Error('Nije moguće pronaći koordinate za datu adresu');
+      }
+
       const { data, error } = await supabase
         .from('jobs')
         .insert([{
@@ -74,9 +92,12 @@ export default function PostJobs() {
           adresa: formData.adresa,
           broj_telefona: formData.broj_telefona,
           dnevnica: Number(formData.dnevnica),
+          wage_type: wageType, // Include wage type in the submission
           opis: formData.opis,
-          broj_radnika: Number(formData.broj_radnika), // Add this line
-          user_email: user.email
+          broj_radnika: Number(formData.broj_radnika),
+          user_email: user.email,
+          latitude: coordinates.latitude,
+          longitude: coordinates.longitude
         }])
         .select();
   
@@ -95,6 +116,10 @@ export default function PostJobs() {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  };
+
+  const handleWageTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setWageType(e.target.value as 'per day' | 'per hour');
   };
 
   return (
@@ -141,13 +166,23 @@ export default function PostJobs() {
 
           <div>
             <label className="block text-black font-medium mb-2">Wage (€) *</label>
-            <input
-              type="number"
-              name="dnevnica"
-              value={formData.dnevnica}
-              onChange={handleChange}
-              className={`w-full p-3 border rounded-lg text-black ${errors.dnevnica ? 'border-red-500' : 'border-gray-300'}`}
-            />
+            <div className="flex gap-2">
+              <input
+                type="number"
+                name="dnevnica"
+                value={formData.dnevnica}
+                onChange={handleChange}
+                className={`w-full p-3 border rounded-lg text-black ${errors.dnevnica ? 'border-red-500' : 'border-gray-300'}`}
+              />
+              <select
+                value={wageType}
+                onChange={handleWageTypeChange}
+                className="p-3 border rounded-lg text-black bg-white"
+              >
+                <option value="per day">Per Day</option>
+                <option value="per hour">Per Hour</option>
+              </select>
+            </div>
             {errors.dnevnica && <p className="text-red-500 text-sm mt-1">{errors.dnevnica}</p>}
           </div>
 
