@@ -9,6 +9,7 @@ interface Job {
   grad: string;
   adresa: string;
   dnevnica: number;
+  wage_type: string; // Add wage_type to the interface
   created_at: string;
 }
 
@@ -32,7 +33,7 @@ export default function FindJobs() {
       try {
         const { data, error } = await supabase
           .from('jobs')
-          .select('id, grad, adresa, dnevnica, created_at'); // Fetch only required fields
+          .select('id, grad, adresa, dnevnica, wage_type, created_at'); // Fetch wage_type along with other fields
 
         if (error) throw error;
 
@@ -77,7 +78,7 @@ export default function FindJobs() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <FaEuroSign className="text-green-600" />
-                  <p>{job.dnevnica} € per day</p>
+                  <p>{job.dnevnica} € {job.wage_type === 'per day' ? 'per day' : 'per hour'}</p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <FaCalendarAlt className="text-green-600" />

@@ -6,12 +6,14 @@ import { FaMapMarkerAlt, FaCalendarAlt, FaEnvelope, FaPhoneAlt, FaEuroSign, FaUs
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+
 interface Job {
   id: string;
   grad: string;
   adresa: string;
   opis: string;
   dnevnica: number;
+  wage_type: string; // Matches the Supabase column
   created_at: string;
   user_email: string;
   broj_telefona: string;
@@ -38,6 +40,7 @@ export default function ViewJob() {
 
         if (error) throw error;
 
+        console.log('Fetched job data:', data); // Log the fetched data
         setJob(data);
       } catch (error) {
         console.error('Error fetching job:', error);
@@ -110,8 +113,6 @@ export default function ViewJob() {
     popupAnchor: [1, -34],
     shadowSize: [41, 41],
   });
-  
-  
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -127,7 +128,9 @@ export default function ViewJob() {
             </div>
             <div className="flex items-center space-x-2">
               <FaEuroSign className="text-green-600" />
-              <p>{job.dnevnica} € per day</p>
+              <p>
+                {job.dnevnica} € {job.wage_type.toLowerCase() === 'per day' ? 'per day' : 'per hour'}
+              </p>
             </div>
             <div className="flex items-center space-x-2">
               <FaCalendarAlt className="text-green-600" />
