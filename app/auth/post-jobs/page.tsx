@@ -27,6 +27,18 @@ export default function PostJobs() {
     checkAuth();
   }, [router]);
 
+  const fetchCoordinates = async (address: string) => {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+    const data = await response.json();
+    if (data && data.length > 0) {
+      return {
+        latitude: parseFloat(data[0].lat),
+        longitude: parseFloat(data[0].lon)
+      };
+    }
+    return null;
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     const phoneRegex = /^\+?[0-9\s-]{6,}$/;
@@ -66,7 +78,12 @@ export default function PostJobs() {
       if (authError || !user) {
         throw new Error('Niste autentifikovani');
       }
-  
+
+      const coordinates = await fetchCoordinates(`${formData.adresa}, ${formData.grad}`);
+      if (!coordinates) {
+        throw new Error('Nije moguće pronaći koordinate za datu adresu');
+      }
+
       const { data, error } = await supabase
         .from('jobs')
         .insert([{
@@ -75,8 +92,10 @@ export default function PostJobs() {
           broj_telefona: formData.broj_telefona,
           dnevnica: Number(formData.dnevnica),
           opis: formData.opis,
-          broj_radnika: Number(formData.broj_radnika), // Add this line
-          user_email: user.email
+          broj_radnika: Number(formData.broj_radnika),
+          user_email: user.email,
+          latitude: coordinates.latitude,
+          longitude: coordinates.longitude
         }])
         .select();
   
