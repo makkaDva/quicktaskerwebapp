@@ -33,7 +33,7 @@ const ProfilePage: React.FC = () => {
           : [fullName, ""];
 
         // Fetch user metadata
-        const { data: profileData } = await supabase
+        const { data: profileData,error } = await supabase
           .from("profiles") // Replace with your table name if different
           .select("avatar_url")
           .eq("id", user.id)
@@ -66,47 +66,43 @@ const ProfilePage: React.FC = () => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
+  
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not logged in");
-
-      // Upload the file to Supabase Storage
+  
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
+  
+      // Upload the file to storage
       const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file);
+  .from("avatars")
+  .upload(fileName, file, { upsert: true });
 
+  
       if (uploadError) throw uploadError;
-
-      // Get the public URL of the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
-
-      // Update the user's profile metadata with the new avatar URL
+  
+      // Get the public URL
+      const { data } = supabase.storage.from("avatars").getPublicUrl(fileName);
+      const publicUrl = data.publicUrl;
+  
+      // Update profile with new image URL
       const { error: updateError } = await supabase
-        .from("profiles") // Replace with your table name if different
-        .upsert({
-          id: user.id,
-          avatar_url: publicUrl,
-          updated_at: new Date().toISOString(),
-        });
-
+        .from("profiles")
+        .upsert({ id: user.id, avatar_url: publicUrl });
+  
       if (updateError) throw updateError;
-
-      // Update the local state to reflect the new profile picture
+  
       setProfilePicture(publicUrl);
       setUserData((prev: any) => ({ ...prev, avatarUrl: publicUrl }));
-      
+  
     } catch (err) {
       setError("Failed to upload profile picture");
       console.error(err);
     }
   };
+  
+  
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
