@@ -6,13 +6,13 @@ import supabase from "@/lib/supabase";
 export default function Dashboard() {
   const router = useRouter();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) router.push("/");
-    };
-    checkAuth();
-  }, []);
+  // useEffect(() => {
+  //   const checkAuth = async () => {
+  //     const { data: { user } } = await supabase.auth.getUser();
+  //     if (!user) {router.push("/")}
+  //   };
+  //   checkAuth();
+  // }, []);
 
   const handleOptionSelect = (option: string) => {
     if (option === "oglasavanje") router.push("post-jobs");

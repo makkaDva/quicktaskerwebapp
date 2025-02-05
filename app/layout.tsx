@@ -1,7 +1,8 @@
-'use client'; // Add this if you're using hooks like usePathname
+'use client';
 import { usePathname } from 'next/navigation';
-import OfflineNavbar from './components/offlineNavbar'; // Corrected import path
-import './globals.css'; // Import global styles
+import { AuthProvider } from './AuthContext';
+import Navbar from './components/Navbar';
+import './globals.css';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -15,8 +16,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        {shouldShowNavbar && <OfflineNavbar />}
-        <main>{children}</main>
+        <AuthProvider>
+          {shouldShowNavbar && <Navbar />} {/* Conditionally render the Navbar */}
+          <main>{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

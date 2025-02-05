@@ -27,7 +27,7 @@ export default function LoginPage() {
       if (error) throw error;
   
       // If successful, redirect the user to the dashboard or home page
-      router.push('/auth/dashboard'); // Adjust the redirect path as needed
+      router.push('/find-jobs'); // Adjust the redirect path as needed
     } catch (err) {
       // Handle any errors that occur during the login process
       setError(err instanceof Error ? err.message : 'Login failed');

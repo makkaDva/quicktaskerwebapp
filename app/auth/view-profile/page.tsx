@@ -85,9 +85,7 @@ const ProfilePage: React.FC = () => {
       {/* Profile Box */}
       <div className="bg-white p-8 rounded-lg shadow-md flex items-center space-x-8 w-full max-w-3xl">
         {/* Profile Picture */}
-        <div
-          className="w-48 h-48 rounded-full overflow-hidden border-4 border-gray-200 cursor-pointer relative"
-        >
+        <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-gray-200 cursor-pointer relative">
           <Image
             src={profilePicture || "/basicProfilePicture.jpg"}
             alt="Profile Picture"
