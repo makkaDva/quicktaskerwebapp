@@ -920,6 +920,10 @@ body:is(.dark *) {
   margin-left: 1rem;
 }
 
+.ml-8 {
+  margin-left: 2rem;
+}
+
 .mt-1 {
   margin-top: .25rem;
 }
@@ -940,10 +944,6 @@ body:is(.dark *) {
   margin-top: 2rem;
 }
 
-.ml-8 {
-  margin-left: 2rem;
-}
-
 .block {
   display: block;
 }
@@ -958,6 +958,10 @@ body:is(.dark *) {
 
 .hidden {
   display: none;
+}
+
+.h-10 {
+  height: 2.5rem;
 }
 
 .h-32 {
@@ -984,12 +988,12 @@ body:is(.dark *) {
   height: 100vh;
 }
 
-.h-10 {
-  height: 2.5rem;
-}
-
 .min-h-screen {
   min-height: 100vh;
+}
+
+.w-10 {
+  width: 2.5rem;
 }
 
 .w-48 {
@@ -1006,10 +1010,6 @@ body:is(.dark *) {
 
 .w-full {
   width: 100%;
-}
-
-.w-10 {
-  width: 2.5rem;
 }
 
 .max-w-2xl {

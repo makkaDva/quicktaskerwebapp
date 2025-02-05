@@ -55,11 +55,11 @@ export default function OfflineNavbar() {
   };
 
   const handleLogin = () => {
-    router.push('/app/login');
+    router.push('/login');
   };
 
   const handleRegister = () => {
-    router.push('/app/register-page');
+    router.push('/register-page');
   };
 
   useEffect(() => {

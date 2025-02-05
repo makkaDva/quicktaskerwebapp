@@ -9,7 +9,7 @@ export default function Dashboard() {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) router.push("/");
+      if (!user) {router.push("/")}
     };
     checkAuth();
   }, []);
