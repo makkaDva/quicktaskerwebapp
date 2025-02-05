@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Resend } from 'resend';
+// import { Resend } from 'resend'; // Commented out
 import supabase from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import { FaMapMarkerAlt, FaCalendarAlt, FaEnvelope, FaPhoneAlt, FaEuroSign, FaUsers } from 'react-icons/fa';
@@ -71,63 +71,66 @@ export default function ViewJob() {
   const handleApplyForJob = async () => {
     try {
       if (!job) throw new Error('Job data is not available.');
-  
+
       // Get the current authenticated user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
+
       if (authError || !user) {
         router.push('/auth/login'); // Redirect to the login page
         throw new Error('You must be logged in to apply for a job.');
       }
-  
+
       // Get the current user's email
       const applicantEmail = user.email;
-  
+      const applicantName = user.user_metadata.name;
+
       if (!applicantEmail) {
         throw new Error('User email is not available.');
       }
-  
+
       if (applicantEmail === job.user_email) {
         alert('You cannot apply for your own job.');
         return;
       }
-  
+
       if (job.broj_radnika > 0) {
         // Update the number of workers needed
         const { error: updateError } = await supabase
           .from('jobs')
           .update({ broj_radnika: job.broj_radnika - 1 })
           .eq('id', job.id);
-  
+
         if (updateError) throw updateError;
-  
+
         // Fetch the updated job data
         const { data: updatedJob, error: fetchError } = await supabase
           .from('jobs')
           .select('*')
           .eq('id', id)
           .single();
-  
+
         if (fetchError) throw fetchError;
-  
+
         setJob(updatedJob);
-  
-        // Call the API route to send the email
+
+        // Commented out: Call the API route to send the email
+        /*
         const response = await fetch('/api/send-email', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            applicantName,
             applicantEmail,
             jobPosterEmail: job.user_email,
             jobDescription: job.opis,
             jobCity: job.grad,
           }),
         });
-  
+
         const result = await response.json();
-  
+
         if (response.ok) {
           console.log('Email sent successfully:', result.data);
           alert('You have successfully applied for this job! The job poster has been notified.');
@@ -135,6 +138,7 @@ export default function ViewJob() {
           console.error('Error sending email:', result.error);
           alert('Job application successful, but email notification failed.');
         }
+        */
       } else {
         alert('No more workers are needed for this job.');
       }
