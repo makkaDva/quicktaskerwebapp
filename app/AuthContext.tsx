@@ -1,36 +1,51 @@
 'use client';
+import { createContext, useContext, useEffect, useState } from 'react';
+import supabase from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
-import { createContext, useContext, useState, useEffect } from 'react';
-
-const AuthContext = createContext<{
+interface AuthContextType {
   isLoggedIn: boolean;
-  setIsLoggedIn: (isLoggedIn: boolean) => void;
-}>({
-  isLoggedIn: false,
-  setIsLoggedIn: () => {},
-});
+  signOut: () => Promise<void>;
+}
 
-export const useAuth = () => useContext(AuthContext);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
 
-  // Read auth state from localStorage on initial render
   useEffect(() => {
-    const storedAuthState = localStorage.getItem('isLoggedIn');
-    if (storedAuthState) {
-      setIsLoggedIn(JSON.parse(storedAuthState));
-    }
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Write auth state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('isLoggedIn', JSON.stringify(isLoggedIn));
-  }, [isLoggedIn]);
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setIsLoggedIn(false); // Update the authentication state
+    router.refresh(); // Refresh the page to ensure the Navbar updates
+  };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn }}>
+    <AuthContext.Provider value={{ isLoggedIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

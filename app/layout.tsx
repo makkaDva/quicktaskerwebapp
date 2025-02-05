@@ -1,9 +1,8 @@
-'use client'; // Add this if you're using hooks like usePathname
+'use client';
 import { usePathname } from 'next/navigation';
-import { AuthProvider, useAuth } from './AuthContext'; // Import the AuthProvider
-import OfflineNavbar from './components/offlineNavbar'; // Corrected import path
-import Navbar from './components/Navbar'; // Import the Navbar for logged-in users
-import './globals.css'; // Import global styles
+import { AuthProvider } from './AuthContext';
+import Navbar from './components/Navbar';
+import './globals.css';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -18,20 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <AuthProvider>
-          <NavbarWrapper shouldShowNavbar={shouldShowNavbar} />
+          {shouldShowNavbar && <Navbar />} {/* Conditionally render the Navbar */}
           <main>{children}</main>
         </AuthProvider>
       </body>
     </html>
   );
 }
-
-const NavbarWrapper = ({ shouldShowNavbar }: { shouldShowNavbar: boolean }) => {
-  const { isLoggedIn } = useAuth();
-
-  if (!shouldShowNavbar) {
-    return null; // Don't show any navbar on excluded routes
-  }
-
-  return isLoggedIn ? <Navbar /> : <OfflineNavbar />;
-};

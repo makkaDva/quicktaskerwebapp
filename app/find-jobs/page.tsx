@@ -87,7 +87,7 @@ export default function FindJobs() {
           {filteredJobs.map((job) => (
             <div
               key={job.id} // Use job.id as the key
-              onClick={() => router.push(`/auth/view-job/${job.id}`)}
+              onClick={() => router.push(`/view-job/${job.id}`)}
               className="p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
             >
               <h2 className="text-2xl font-bold text-green-700 mb-2">{job.grad}</h2>

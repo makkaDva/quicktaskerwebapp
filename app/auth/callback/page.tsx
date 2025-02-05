@@ -14,7 +14,7 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN") {
-        router.push("/auth/dashboard");
+        router.push("/find-jobs");
       }
     });
   }, [router]);
