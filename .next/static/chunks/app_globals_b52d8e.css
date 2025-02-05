@@ -1030,6 +1030,10 @@ body:is(.dark *) {
   margin-top: .75rem;
 }
 
+.ml-8 {
+  margin-left: 2rem;
+}
+
 .block {
   display: block;
 }
@@ -1082,6 +1086,10 @@ body:is(.dark *) {
   height: 1.5rem;
 }
 
+.h-10 {
+  height: 2.5rem;
+}
+
 .min-h-screen {
   min-height: 100vh;
 }
@@ -1112,6 +1120,10 @@ body:is(.dark *) {
 
 .w-6 {
   width: 1.5rem;
+}
+
+.w-10 {
+  width: 2.5rem;
 }
 
 .max-w-2xl {

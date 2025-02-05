@@ -15,8 +15,8 @@ export default function Dashboard() {
   }, []);
 
   const handleOptionSelect = (option: string) => {
-    if (option === "oglasavanje") router.push("/auth/post-jobs");
-    if (option === "trazim") router.push("/auth/find-jobs");
+    if (option === "oglasavanje") router.push("post-jobs");
+    if (option === "trazim") router.push("find-jobs");
   };
 
   return (
