@@ -71,10 +71,10 @@ export default function HomeClient() {
             className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight"
           >
             <span className="bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
-              Instant Gig Economy
+              gg
             </span>
             <br />
-            For Real People
+            nista mikrofon check
           </motion.h1>
 
           <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
@@ -111,7 +111,7 @@ export default function HomeClient() {
           className="grid md:grid-cols-3 gap-8 mb-28 max-w-6xl mx-auto"
         >
           {[
-            { value: '500+', label: 'Daily Gigs Posted', icon: <BadgeDollarSign className="w-8 h-8" /> },
+            { value: '100+', label: 'Daily Gigs Posted', icon: <BadgeDollarSign className="w-8 h-8" /> },
             { value: '4.8', label: 'Average Rating', icon: <Star className="w-8 h-8" /> },
             { value: '99%', label: 'Verified Workers', icon: <ShieldCheck className="w-8 h-8" /> },
           ].map((stat, index) => (

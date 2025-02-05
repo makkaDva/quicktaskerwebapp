@@ -234,7 +234,7 @@ export default function OfflineNavbar() {
               >
                 <motion.button
                   whileHover={{ x: 5 }}
-                  onClick={() => router.push('/app/login')}
+                  onClick={() => router.push('/login')}
                   className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                 >
                   <LogIn className="w-4 h-4" />
@@ -242,7 +242,7 @@ export default function OfflineNavbar() {
                 </motion.button>
                 <motion.button
                   whileHover={{ x: 5 }}
-                  onClick={() => router.push('/app/register-page')}
+                  onClick={() => router.push('/register-page')}
                   className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                 >
                   <UserPlus className="w-4 h-4" />

@@ -1,13 +1,17 @@
 'use client';
+import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-// import { Resend } from 'resend'; // Commented out
 import supabase from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
-import { FaMapMarkerAlt, FaCalendarAlt, FaEnvelope, FaPhoneAlt, FaEuroSign, FaUsers } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaCalendarAlt, FaEnvelope, FaPhoneAlt, FaEuroSign, FaUsers, FaArrowLeft } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
 import 'leaflet/dist/leaflet.css';
+import { Spinner } from '@/components/ui/spinner';
 
-const MapContainer = dynamic(() => import('react-leaflet').then((mod) => mod.MapContainer), { ssr: false });
+const MapContainer = dynamic(() => import('react-leaflet').then((mod) => mod.MapContainer), { 
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-gray-100 animate-pulse rounded-xl" />
+});
 const TileLayer = dynamic(() => import('react-leaflet').then((mod) => mod.TileLayer), { ssr: false });
 const Marker = dynamic(() => import('react-leaflet').then((mod) => mod.Marker), { ssr: false });
 const Popup = dynamic(() => import('react-leaflet').then((mod) => mod.Popup), { ssr: false });
@@ -27,9 +31,20 @@ interface Job {
   longitude: number;
 }
 
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const staggerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+};
+
 export default function ViewJob() {
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [L, setL] = useState<any>(null);
   const { id } = useParams();
@@ -49,7 +64,6 @@ export default function ViewJob() {
           .single();
 
         if (error) throw error;
-
         setJob(data);
       } catch (error) {
         console.error('Error fetching job:', error);
@@ -59,100 +73,82 @@ export default function ViewJob() {
       }
     };
 
-    if (id) {
-      fetchJob();
-    }
+    if (id) fetchJob();
   }, [id]);
 
-  const handleBackToList = () => {
-    router.push('/auth/find-jobs');
-  };
+  const handleBackToList = () => router.push('/auth/find-jobs');
 
   const handleApplyForJob = async () => {
+    if (!job || applying) return;
+    
     try {
-      if (!job) throw new Error('Job data is not available.');
-
-      // Get the current authenticated user
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        router.push('/auth/login'); // Redirect to the login page
-        throw new Error('You must be logged in to apply for a job.');
+      setApplying(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        router.push('/auth/login');
+        return;
       }
 
-      // Get the current user's email
-      const applicantEmail = user.email;
-      const applicantName = user.user_metadata.name;
-
-      if (!applicantEmail) {
-        throw new Error('User email is not available.');
-      }
-
-      if (applicantEmail === job.user_email) {
+      if (user.email === job.user_email) {
         alert('You cannot apply for your own job.');
         return;
       }
 
-      if (job.broj_radnika > 0) {
-        // Update the number of workers needed
-        const { error: updateError } = await supabase
-          .from('jobs')
-          .update({ broj_radnika: job.broj_radnika - 1 })
-          .eq('id', job.id);
-
-        if (updateError) throw updateError;
-
-        // Fetch the updated job data
-        const { data: updatedJob, error: fetchError } = await supabase
-          .from('jobs')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (fetchError) throw fetchError;
-
-        setJob(updatedJob);
-
-        // Commented out: Call the API route to send the email
-        /*
-        const response = await fetch('/api/send-email', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            applicantName,
-            applicantEmail,
-            jobPosterEmail: job.user_email,
-            jobDescription: job.opis,
-            jobCity: job.grad,
-          }),
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-          console.log('Email sent successfully:', result.data);
-          alert('You have successfully applied for this job! The job poster has been notified.');
-        } else {
-          console.error('Error sending email:', result.error);
-          alert('Job application successful, but email notification failed.');
-        }
-        */
-      } else {
-        alert('No more workers are needed for this job.');
+      if (job.broj_radnika <= 0) {
+        alert('No more workers needed for this job.');
+        return;
       }
+
+      const { error } = await supabase
+        .from('jobs')
+        .update({ broj_radnika: job.broj_radnika - 1 })
+        .eq('id', job.id);
+
+      if (error) throw error;
+
+      setJob(prev => prev ? { ...prev, broj_radnika: prev.broj_radnika - 1 } : null);
+      alert('Application successful! The job poster has been notified.');
+
     } catch (error: any) {
-      console.error('Error applying for job:', error);
-      alert(`Error: ${error.message || 'Failed to apply for the job.'}`);
+      console.error('Application failed:', error);
+      alert(error.message || 'Application failed. Please try again.');
+    } finally {
+      setApplying(false);
     }
   };
 
-  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
-  if (error) return <div className="flex justify-center items-center h-screen text-red-600">{error}</div>;
-  if (!job) return <div className="flex justify-center items-center h-screen">Job not found.</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex justify-center items-center">
+      <Spinner className="w-12 h-12 text-green-600" />
+    </div>
+  );
 
-  const markerIcon = new L.Icon({
+  if (error) return (
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col justify-center items-center text-red-600 gap-4">
+      <div className="text-xl">{error}</div>
+      <button
+        onClick={handleBackToList}
+        className="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition-colors"
+      >
+        Return to Job List
+      </button>
+    </div>
+  );
+
+  if (!job) return (
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col justify-center items-center gap-4">
+      <div className="text-xl text-gray-700">Job not found</div>
+      <button
+        onClick={handleBackToList}
+        className="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition-colors"
+      >
+        Return to Job List
+      </button>
+    </div>
+  );
+
+  const markerIcon = L && new L.Icon({
     iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
     shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
     iconSize: [25, 41],
@@ -162,82 +158,177 @@ export default function ViewJob() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Job Details</h1>
-        <div className="p-6 bg-white rounded-xl shadow-lg flex flex-col md:flex-row">
-          {/* Job Info */}
-          <div className="md:w-2/3 space-y-3 text-gray-600">
-            <h2 className="text-2xl font-bold text-green-700 mb-2">{job.grad}</h2>
-            <div className="flex items-center space-x-2">
-              <FaMapMarkerAlt className="text-green-600" />
-              <p>{job.adresa}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <FaEuroSign className="text-green-600" />
-              <p>
-                {job.dnevnica} € {job.wage_type.toLowerCase() === 'per day' ? 'per day' : 'per hour'}
-              </p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <FaCalendarAlt className="text-green-600" />
-              <p>Posted on: {new Date(job.created_at).toLocaleDateString()}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <FaEnvelope className="text-green-600" />
-              <p>{job.user_email}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <FaPhoneAlt className="text-green-600" />
-              <p>{job.broj_telefona}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <FaUsers className="text-green-600" />
-              <p>Workers Needed: {job.broj_radnika}</p>
-            </div>
-            <div className="border-t border-gray-300 pt-4 mt-4">
-              <h3 className="text-xl font-semibold text-green-700">Job Description</h3>
-              <p className="text-gray-700 mt-2">{job.opis}</p>
-            </div>
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+      <section className="container mx-auto px-4 sm:px-6 py-12">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="max-w-4xl mx-auto"
+        >
+          {/* Header */}
+          <div className="mb-12">
+            <motion.button
+              onClick={handleBackToList}
+              whileHover={{ scale: 1.05 }}
+              className="mb-8 flex items-center gap-2 text-green-600 hover:text-green-700"
+            >
+              <FaArrowLeft className="w-5 h-5" />
+              <span className="font-semibold">Back to Jobs</span>
+            </motion.button>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 text-center"
+            >
+              <span className="bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
+                {job.grad}
+              </span>
+            </motion.h1>
           </div>
 
-          {/* Map Container */}
-          {job.latitude && job.longitude && (
-            <div className="md:w-1/3 h-48 md:h-64 rounded-lg overflow-hidden shadow-lg ml-4">
-              <MapContainer
-                center={[job.latitude, job.longitude]}
-                zoom={15}
-                style={{ height: '100%', width: '100%' }}
-                scrollWheelZoom={false}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Marker position={[job.latitude, job.longitude]} icon={markerIcon}>
-                  <Popup>{job.grad}, {job.adresa}</Popup>
-                </Marker>
-              </MapContainer>
-            </div>
-          )}
-        </div>
+          {/* Main Content */}
+          <motion.div
+            variants={staggerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid md:grid-cols-2 gap-8"
+          >
+            {/* Job Details */}
+            <motion.div
+              variants={fadeInUp}
+              className="p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 space-y-6"
+            >
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-green-100 rounded-lg">
+                    <FaEuroSign className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {job.dnevnica}€
+                      <span className="text-lg text-gray-600 ml-2">
+                        ({job.wage_type.toLowerCase()})
+                      </span>
+                    </h3>
+                  </div>
+                </div>
 
-        {/* Buttons */}
-        <div className="flex justify-between mt-8">
-          <button
-            onClick={handleBackToList}
-            className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-green-50 rounded-xl">
+                    <div className="flex items-center gap-2 text-green-600">
+                      <FaUsers className="w-5 h-5" />
+                      <span className="font-semibold">Positions Left</span>
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900 mt-2">
+                      {job.broj_radnika}
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-green-50 rounded-xl">
+                    <div className="flex items-center gap-2 text-green-600">
+                      <FaCalendarAlt className="w-5 h-5" />
+                      <span className="font-semibold">Posted</span>
+                    </div>
+                    <div className="text-gray-900 mt-2">
+                      {new Date(job.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <FaMapMarkerAlt className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Address</h3>
+                      <p className="text-gray-600">{job.adresa}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <FaPhoneAlt className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Contact</h3>
+                      <p className="text-gray-600">{job.broj_telefona}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <FaEnvelope className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Email</h3>
+                      <p className="text-gray-600 break-all">{job.user_email}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Job Description</h3>
+                <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                  {job.opis}
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Map Section */}
+            <motion.div
+              variants={fadeInUp}
+              className="h-full w-full rounded-2xl overflow-hidden shadow-xl border border-gray-100"
+            >
+              {job.latitude && job.longitude && L && (
+                <MapContainer
+                  center={[job.latitude, job.longitude]}
+                  zoom={15}
+                  style={{ height: '100%', width: '100%' }}
+                  scrollWheelZoom={false}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <Marker position={[job.latitude, job.longitude]} icon={markerIcon}>
+                    <Popup className="text-sm font-semibold">
+                      {job.grad}, {job.adresa}
+                    </Popup>
+                  </Marker>
+                </MapContainer>
+              )}
+            </motion.div>
+          </motion.div>
+
+          {/* Apply Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-12 text-center"
           >
-            Back to Job List
-          </button>
-          <button
-            onClick={handleApplyForJob}
-            disabled={!job}
-            className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors disabled:bg-gray-400"
-          >
-            Apply for this Job
-          </button>
-        </div>
-      </div>
+            <button
+              onClick={handleApplyForJob}
+              disabled={applying || job.broj_radnika <= 0}
+              className="bg-gradient-to-br from-green-600 to-emerald-500 text-white px-12 py-4 rounded-full text-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {applying ? (
+                <div className="flex items-center gap-2">
+                  <Spinner className="w-5 h-5 text-current" />
+                  Applying...
+                </div>
+              ) : (
+                `Apply Now ${job.broj_radnika > 0 ? `(${job.broj_radnika} positions left)` : ''}`
+              )}
+            </button>
+            {job.broj_radnika <= 0 && (
+              <p className="text-red-600 mt-2">This position is no longer available</p>
+            )}
+          </motion.div>
+        </motion.div>
+      </section>
     </div>
   );
 }
