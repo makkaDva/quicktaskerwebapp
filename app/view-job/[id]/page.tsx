@@ -76,7 +76,7 @@ export default function ViewJob() {
     if (id) fetchJob();
   }, [id]);
 
-const handleBackToList = () => router.push('/auth/find-jobs');
+  const handleBackToList = () => router.push('/find-jobs');
 
   const handleApplyForJob = async () => {
     if (!job || applying) return;
