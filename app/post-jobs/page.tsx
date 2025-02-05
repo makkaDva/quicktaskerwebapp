@@ -17,16 +17,16 @@ export default function PostJobs() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  // useEffect(() => {
-  //   const checkAuth = async () => {
-  //     const { data: { user }, error } = await supabase.auth.getUser();
-  //     if (error || !user) {
-  //       console.error('Auth error:', error);
-  //       router.push('/');
-  //     }
-  //   };
-  //   checkAuth();
-  // }, [router]);
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        console.error('Auth error:', error);
+        router.push('/');
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   const fetchCoordinates = async (address: string) => {
     const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);

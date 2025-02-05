@@ -1,153 +1,94 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, PlusCircle, User, LogIn, UserPlus } from 'lucide-react';
+import { Search, PlusCircle, User, LogIn, UserPlus, Briefcase } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import supabase from '@/lib/supabase';
 
-interface SearchFilters {
-  city: string;
-  wageType: string;
-  wageFrom: string;
-  wageTo: string;
-  dateFrom: string;
-  dateTo: string;
-}
-
 export default function Navbar() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<SearchFilters>({
-    city: '',
-    wageType: '',
-    wageFrom: '',
-    wageTo: '',
-    dateFrom: '',
-    dateTo: ''
-  });
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
-  const [userFullName, setUserFullName] = useState('');
-  const [loading, setLoading] = useState(true); // Add a loading state
-  const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [user, setUser] = useState<{ email?: string; name?: string; avatar?: string } | null>(null);
+  const [loading, setLoading] = useState(true);
   const searchRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
+  // Auth state management
   useEffect(() => {
-    setMounted(true);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUser({
+          email: session.user.email,
+          name: session.user.user_metadata?.full_name,
+          avatar: session.user.user_metadata?.avatar_url
+        });
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription?.unsubscribe();
   }, []);
 
+  // Click outside handlers
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          setUserFullName(user.user_metadata.full_name);
-          setUserEmail(user.email || '');
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-      } finally {
-        setLoading(false); // Set loading to false once the user is fetched
-      }
-    };
-
-    fetchUser();
-  }, [router]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsSearchOpen(false);
-      }
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
-        setIsProfileOpen(false);
-      }
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSearchSubmit = () => {
-    const queryParams = new URLSearchParams(
-      Object.entries(filters).filter(([_, value]) => value)
-    ).toString();
-    
-    if (typeof window !== 'undefined') {
-      window.location.href = `/find-jobs?${queryParams}`;
-    }
-  };
-
-  const updateFilter = (field: keyof SearchFilters, value: string) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      router.push('/'); // Redirect to the home page
-      window.location.reload(); // Force a page refresh to update the Navbar
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  // Don't render the navbar until loading is complete
-  if (loading || !mounted) {
-    return null;
-  }
+  // Hide navbar on auth pages
+  const hiddenPaths = ['/login', '/register', '/auth'];
+  if (hiddenPaths.some(path => pathname?.startsWith(path)) || loading) return null;
 
   return (
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="bg-white/90 backdrop-blur-sm shadow-sm py-4 px-8 flex items-center justify-between sticky top-0 z-50 border-b border-gray-100"
+      className="bg-white/90 backdrop-blur-sm shadow-sm py-3 px-6 flex items-center justify-between sticky top-0 z-50 border-b border-gray-100"
     >
       {/* Logo */}
-      <Link href="/find-jobs" className="flex items-center">
+      <Link href="/" className="flex items-center gap-2">
         <motion.div whileHover={{ scale: 1.05 }}>
           <Image
-            src="/kvikyLogo.png"
-            alt="Kviky Logo"
+            src="/Kvikylogo.png"
+            alt="Logo"
             width={120}
-            height={60}
+            height={50}
             className="object-contain"
+            priority
           />
         </motion.div>
       </Link>
 
-      {/* Search Section */}
+      {/* Search */}
       <div className="flex-grow mx-8 relative max-w-3xl" ref={searchRef}>
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="flex items-center cursor-pointer"
-          onClick={() => setIsSearchOpen(!isSearchOpen)}
-        >
-          <div className="relative w-full">
-            <input
-              type="text"
-              placeholder="Find your next gig"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-6 py-3 pl-12 rounded-full border-2 border-gray-200 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all"
-            />
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-          </div>
-        </motion.div>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search..."
+            className="w-full px-6 py-2.5 pl-12 rounded-full border-2 border-gray-200 focus:outline-none focus:border-green-500 transition-all text-sm"
+            onFocus={() => setSearchOpen(true)}
+          />
+          <Search className="absolute left-4 top-2.5 h-4 w-4 text-gray-400" />
+        </div>
 
         <AnimatePresence>
-          {isSearchOpen && (
+          {searchOpen && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="absolute left-0 mt-3 w-full bg-white rounded-xl shadow-xl py-5 px-6 z-50 border border-gray-100"
+              className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-xl p-4 space-y-4"
             >
               {/* Search filters */}
             </motion.div>
@@ -155,83 +96,75 @@ export default function Navbar() {
         </AnimatePresence>
       </div>
 
-      {/* Action Buttons */}
+      {/* Actions */}
       <div className="flex items-center gap-4">
         <motion.button
           whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => router.push('/post-jobs')}
-          className="bg-gradient-to-br from-green-600 to-emerald-500 text-white px-6 py-2.5 rounded-full text-md font-semibold flex items-center gap-2 shadow-lg hover:shadow-emerald-100"
+          className="bg-green-600 text-white px-5 py-2 rounded-full text-sm flex items-center gap-2"
+          onClick={() => router.push('/post-job')}
         >
-          <PlusCircle className="w-5 h-5" />
+          <Briefcase className="w-4 h-4" />
           Post Job
         </motion.button>
 
-        {/* Profile Section */}
-        <div className="relative ml-4" ref={profileRef}>
+        {/* Profile */}
+        <div className="relative" ref={profileRef}>
           <motion.button
             whileHover={{ scale: 1.05 }}
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border-2 border-green-100"
+            onClick={() => setProfileOpen(!profileOpen)}
+            className="w-9 h-9 rounded-full bg-gray-100 border-2 border-green-100 overflow-hidden"
           >
-            {userEmail ? (
-              <Image
-                src="/basicProfilePicture.jpg"
-                alt="Profile"
-                width={40}
-                height={40}
-                className="rounded-full"
-              />
+            {user?.avatar ? (
+              <Image src={user.avatar} alt="Avatar" width={36} height={36} className="object-cover" />
             ) : (
-              <User className="w-5 h-5 text-gray-600" />
+              <User className="w-4 h-4 text-gray-600 m-auto" />
             )}
           </motion.button>
 
           <AnimatePresence>
-            {isProfileOpen && (
+            {profileOpen && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl py-2 z-50 border border-gray-100"
+                className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl py-2"
               >
-                {userEmail ? (
+                {user ? (
                   <>
-                    <motion.button
-                      whileHover={{ x: 5 }}
-                      onClick={() => router.push('/auth/view-profile')}
-                      className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    <div className="px-4 py-2 border-b">
+                      <p className="text-sm font-medium truncate">{user.name || 'User'}</p>
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    </div>
+                    <button
+                      onClick={() => router.push('/profile')}
+                      className="w-full px-4 py-2 text-sm hover:bg-gray-50 flex gap-2 items-center"
                     >
-                      <User className="w-4 h-4" />
-                      View Profile
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ x: 5 }}
-                      onClick={handleSignOut}
-                      className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      <User className="w-4 h-4" /> Profile
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        router.refresh();
+                      }}
+                      className="w-full px-4 py-2 text-sm hover:bg-gray-50 flex gap-2 items-center"
                     >
-                      <LogIn className="w-4 h-4" />
-                      Sign Out
-                    </motion.button>
+                      <LogIn className="w-4 h-4" /> Sign Out
+                    </button>
                   </>
                 ) : (
                   <>
-                    <motion.button
-                      whileHover={{ x: 5 }}
+                    <button
                       onClick={() => router.push('/login')}
-                      className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      className="w-full px-4 py-2 text-sm hover:bg-gray-50 flex gap-2 items-center"
                     >
-                      <LogIn className="w-4 h-4" />
-                      Log In
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ x: 5 }}
-                      onClick={() => router.push('/register-page')}
-                      className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      <LogIn className="w-4 h-4" /> Login
+                    </button>
+                    <button
+                      onClick={() => router.push('/register')}
+                      className="w-full px-4 py-2 text-sm hover:bg-gray-50 flex gap-2 items-center"
                     >
-                      <UserPlus className="w-4 h-4" />
-                      Register
-                    </motion.button>
+                      <UserPlus className="w-4 h-4" /> Register
+                    </button>
                   </>
                 )}
               </motion.div>
