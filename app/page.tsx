@@ -23,10 +23,10 @@ export default function HomePage() {
       </div>
       
       <button
-        onClick={() => router.push('/login')}
+        onClick={() => router.push('/dashboard')}
         className="mt-6 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-full shadow-md transition duration-300"
       >
-        Proceed to Sign In Page
+        Let's cooperate !
       </button>
     </div>
   );

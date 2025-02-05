@@ -1,4 +1,3 @@
-// pages/profile.tsx
 "use client";
 import React, { useEffect, useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
@@ -19,25 +18,34 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          window.location.href = "/";
+        // ✅ Wait for Supabase session to be ready
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          console.log("Session not found, waiting for auth state...");
           return;
         }
 
-        // Extract full_name and split into firstName and lastName
-        const fullName = user.user_metadata.full_name || "No Info";
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          window.location.href = "/login";
+          return;
+        }
+
+        const fullName = user.user_metadata.name || "No Info";
         const [firstName, lastName] = fullName.split(" ").length >= 2
           ? fullName.split(" ")
           : [fullName, ""];
 
-        // Fetch user metadata
-        const { data: profileData,error } = await supabase
-          .from("profiles") // Replace with your table name if different
+        let { data: profileData, error: profileError } = await supabase
+          .from("profiles")
           .select("avatar_url")
           .eq("id", user.id)
-          .single();
+          .maybeSingle(); // Prevents crash if no row exists
+
+        if (!profileData) {
+          await supabase.from("profiles").insert([{ UID: user.id, avatar_url: null }]);
+          profileData = { avatar_url: "/basicProfilePicture.jpg" };
+        }
 
         setUserData({
           email: user.email,
@@ -47,62 +55,27 @@ const ProfilePage: React.FC = () => {
         });
 
         setProfilePicture(profileData?.avatar_url || "/basicProfilePicture.jpg");
-        
       } catch (err) {
         setError("Failed to fetch user data");
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserData();
+    // ✅ Listen for auth state changes to avoid first-load redirect issue
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") {
+        fetchUserData();
+      }
+    });
+
+    fetchUserData(); // Initial fetch
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
-
-
-  const handleProfilePictureClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-  
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not logged in");
-  
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-  
-      // Upload the file to storage
-      const { error: uploadError } = await supabase.storage
-  .from("avatars")
-  .upload(fileName, file, { upsert: true });
-
-  
-      if (uploadError) throw uploadError;
-  
-      // Get the public URL
-      const { data } = supabase.storage.from("avatars").getPublicUrl(fileName);
-      const publicUrl = data.publicUrl;
-  
-      // Update profile with new image URL
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .upsert({ id: user.id, avatar_url: publicUrl });
-  
-      if (updateError) throw updateError;
-  
-      setProfilePicture(publicUrl);
-      setUserData((prev: any) => ({ ...prev, avatarUrl: publicUrl }));
-  
-    } catch (err) {
-      setError("Failed to upload profile picture");
-      console.error(err);
-    }
-  };
-  
-  
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -114,7 +87,6 @@ const ProfilePage: React.FC = () => {
         {/* Profile Picture */}
         <div
           className="w-48 h-48 rounded-full overflow-hidden border-4 border-gray-200 cursor-pointer relative"
-          onClick={handleProfilePictureClick}
         >
           <Image
             src={profilePicture || "/basicProfilePicture.jpg"}
@@ -123,41 +95,25 @@ const ProfilePage: React.FC = () => {
             height={192}
             className="object-cover w-full h-full"
           />
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-            <span className="text-white text-sm font-medium">Edit</span>
-          </div>
         </div>
-
-        {/* Hidden file input */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="image/*"
-          onChange={handleFileUpload}
-        />
 
         {/* Profile Information */}
         <div className="flex-1">
           <h2 className="text-2xl font-bold mb-6 text-center text-black">Your Profile</h2>
-          
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">First Name</label>
               <p className="mt-1 text-black text-lg">{userData?.firstName}</p>
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700">Last Name</label>
               <p className="mt-1 text-black text-lg">{userData?.lastName}</p>
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700">Email</label>
               <p className="mt-1 text-black text-lg">{userData?.email}</p>
             </div>
           </div>
-
           <Link href="/auth/find-jobs">
             <button className="w-full mt-6 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700">
               Back to Home
