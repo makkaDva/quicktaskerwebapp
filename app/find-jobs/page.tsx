@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import supabase from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FaMapMarkerAlt, FaCalendarAlt, FaEuroSign } from 'react-icons/fa';
 
 interface Job {
@@ -19,13 +19,33 @@ export default function FindJobs() {
   const [error, setError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState<'newest' | 'oldest'>('newest');
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Extract query parameters
+  const city = searchParams.get('city') || '';
+  const wageType = searchParams.get('wageType') || '';
+  const wageFrom = parseFloat(searchParams.get('wageFrom') || '0');
+  const wageTo = parseFloat(searchParams.get('wageTo') || 'Infinity');
+  const dateFrom = searchParams.get('dateFrom') || '';
+  const dateTo = searchParams.get('dateTo') || '';
 
   // Sort jobs based on the selected option
   const sortedJobs = [...jobs].sort((a, b) => {
     const dateA = new Date(a.created_at).getTime();
     const dateB = new Date(b.created_at).getTime();
-    
     return sortOption === 'newest' ? dateB - dateA : dateA - dateB;
+  });
+
+  // Filter jobs based on query parameters
+  const filteredJobs = sortedJobs.filter((job) => {
+    const jobDate = new Date(job.created_at).toISOString().split('T')[0];
+    const matchesCity = city ? job.grad.toLowerCase().includes(city.toLowerCase()) : true;
+    const matchesWageType = wageType ? job.wage_type === wageType : true;
+    const matchesWageRange = job.dnevnica >= wageFrom && job.dnevnica <= wageTo;
+    const matchesDateRange =
+      (!dateFrom || jobDate >= dateFrom) && (!dateTo || jobDate <= dateTo);
+
+    return matchesCity && matchesWageType && matchesWageRange && matchesDateRange;
   });
 
   useEffect(() => {
@@ -64,7 +84,7 @@ export default function FindJobs() {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Find Jobs</h1>
         <div className="space-y-6">
-          {sortedJobs.map((job) => (
+          {filteredJobs.map((job) => (
             <div
               key={job.id} // Use job.id as the key
               onClick={() => router.push(`/auth/view-job/${job.id}`)}
@@ -78,7 +98,9 @@ export default function FindJobs() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <FaEuroSign className="text-green-600" />
-                  <p>{job.dnevnica} € {job.wage_type === 'per day' ? 'per day' : 'per hour'}</p>
+                  <p>
+                    {job.dnevnica} € {job.wage_type === 'per_day' ? 'per day' : 'per hour'}
+                  </p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <FaCalendarAlt className="text-green-600" />
