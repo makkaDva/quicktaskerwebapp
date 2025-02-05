@@ -181,7 +181,7 @@ export default function FindJobs() {
                     <p className="text-xl font-semibold text-green-600">
                       {job.dnevnica}€
                       <span className="text-sm text-gray-500 ml-2">
-                        {job.wage_type === 'per_day' ? '/day' : '/hour'}
+                        {job.wage_type === 'per day' ? '/day' : '/hour'}
                       </span>
                     </p>
                   </div>
