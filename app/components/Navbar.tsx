@@ -136,7 +136,7 @@ export default function Navbar() {
                       <p className="text-xs text-gray-500 truncate">{user.email}</p>
                     </div>
                     <button
-                      onClick={() => router.push('/profile')}
+                      onClick={() => router.push('/auth/view-profile')}
                       className="w-full px-4 py-2 text-sm hover:bg-gray-50 flex gap-2 items-center"
                     >
                       <User className="w-4 h-4" /> Profile
@@ -160,7 +160,7 @@ export default function Navbar() {
                       <LogIn className="w-4 h-4" /> Login
                     </button>
                     <button
-                      onClick={() => router.push('/register')}
+                      onClick={() => router.push('/register-page')}
                       className="w-full px-4 py-2 text-sm hover:bg-gray-50 flex gap-2 items-center"
                     >
                       <UserPlus className="w-4 h-4" /> Register
