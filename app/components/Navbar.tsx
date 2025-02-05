@@ -9,11 +9,21 @@ import supabase from '@/lib/supabase';
 
 export default function Navbar() {
   const router = useRouter();
-  const pathname = usePathname();
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [user, setUser] = useState<{ email?: string; name?: string; avatar?: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<SearchFilters>({
+    city: '',
+    wageType: '',
+    wageFrom: '',
+    wageTo: '',
+    dateFrom: '',
+    dateTo: ''
+  });
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [userFullName, setUserFullName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -37,18 +47,64 @@ export default function Navbar() {
 
   // Click outside handlers
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
+    const fetchUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserFullName(user.user_metadata.full_name);
+          setUserEmail(user.email || '');
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [router]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Hide navbar on auth pages
-  const hiddenPaths = ['/login', '/register', '/auth'];
-  if (hiddenPaths.some(path => pathname?.startsWith(path)) || loading) return null;
+  const handleSearchSubmit = () => {
+    const queryParams = new URLSearchParams(
+      Object.entries(filters).filter(([_, value]) => value)
+    ).toString();
+    
+    if (typeof window !== 'undefined') {
+      window.location.href = `/find-jobs?${queryParams}`;
+    }
+  };
+
+  const updateFilter = (field: keyof SearchFilters, value: string) => {
+    setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.push('/');
+      window.location.reload();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  if (loading || !mounted) {
+    return null;
+  }
 
   return (
     <motion.nav
@@ -88,9 +144,77 @@ export default function Navbar() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-xl p-4 space-y-4"
+              className="absolute left-0 mt-3 w-full bg-white rounded-xl shadow-xl py-5 px-6 z-50 border border-gray-100"
             >
-              {/* Search filters */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">City</label>
+                  <input
+                    type="text"
+                    value={filters.city}
+                    onChange={(e) => updateFilter('city', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Wage Type</label>
+                  <select
+                    value={filters.wageType}
+                    onChange={(e) => updateFilter('wageType', e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">Select</option>
+                    <option value="per day">Per Day</option>
+                    <option value="per hour">Per Hour</option>
+                  </select>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700">Wage From</label>
+                    <input
+                      type="number"
+                      value={filters.wageFrom}
+                      onChange={(e) => updateFilter('wageFrom', e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700">Wage To</label>
+                    <input
+                      type="number"
+                      value={filters.wageTo}
+                      onChange={(e) => updateFilter('wageTo', e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700">Date From</label>
+                    <input
+                      type="date"
+                      value={filters.dateFrom}
+                      onChange={(e) => updateFilter('dateFrom', e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700">Date To</label>
+                    <input
+                      type="date"
+                      value={filters.dateTo}
+                      onChange={(e) => updateFilter('dateTo', e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleSearchSubmit}
+                  className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                >
+                  Look up your gigs
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

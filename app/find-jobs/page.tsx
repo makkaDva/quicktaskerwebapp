@@ -51,11 +51,18 @@ export default function FindJobs() {
   const filteredJobs = sortedJobs.filter((job) => {
     const jobDate = new Date(job.created_at).toISOString().split('T')[0];
     const matchesCity = city ? job.grad.toLowerCase().includes(city.toLowerCase()) : true;
-    const matchesWageType = wageType ? job.wage_type === wageType : true;
+    
+    // Debugging logs
+    console.log("Filter Wage Type:", wageType);
+    console.log("Job Wage Type:", job.wage_type);
+  
+    // Fix: Only apply wageType filter if wageType is provided
+    const matchesWageType = wageType ? job.wage_type.toLowerCase() === wageType.toLowerCase() : true;
+    
     const matchesWageRange = job.dnevnica >= wageFrom && job.dnevnica <= wageTo;
     const matchesDateRange =
       (!dateFrom || jobDate >= dateFrom) && (!dateTo || jobDate <= dateTo);
-
+  
     return matchesCity && matchesWageType && matchesWageRange && matchesDateRange;
   });
 
