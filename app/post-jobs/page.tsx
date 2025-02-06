@@ -103,7 +103,7 @@ export default function PostJobs() {
   
       if (error) throw error;
   
-      router.push('/auth/find-jobs');
+      router.push('/find-jobs');
     } catch (error: any) {
       console.error('Full error:', error);
       alert(`Greška: ${error.message || 'Došlo je do neočekivane greške'}`);
