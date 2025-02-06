@@ -219,13 +219,14 @@ export default function HomeClient() {
               Join our community of 50,000+ trusted users transforming local work
             </p>
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-white text-green-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-50 transition-all shadow-lg flex items-center gap-2 mx-auto"
-            >
-              <Zap className="w-5 h-5" />
-              Get Started Free
-            </motion.button>
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="bg-white text-green-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-50 transition-all shadow-lg flex items-center gap-2 mx-auto"
+            onClick={() => window.location.href = '/register-page'}
+          >
+            <Zap className="w-5 h-5" />
+            Get Started Free
+          </motion.button>
             <p className="mt-6 text-sm text-green-100">
               No credit card required • Cancel anytime
             </p>
