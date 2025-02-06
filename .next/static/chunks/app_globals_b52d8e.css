@@ -986,10 +986,6 @@ body:is(.dark *) {
   margin-left: .5rem;
 }
 
-.ml-4 {
-  margin-left: 1rem;
-}
-
 .mt-1 {
   margin-top: .25rem;
 }
@@ -1014,8 +1010,8 @@ body:is(.dark *) {
   margin-top: 2rem;
 }
 
-.mt-10 {
-  margin-top: 2.5rem;
+.ml-4 {
+  margin-left: 1rem;
 }
 
 .block {
@@ -1507,6 +1503,11 @@ body:is(.dark *) {
   padding-right: 1rem;
 }
 
+.px-5 {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
 .px-6 {
   padding-left: 1.5rem;
   padding-right: 1.5rem;
@@ -1560,6 +1561,11 @@ body:is(.dark *) {
 .py-5 {
   padding-top: 1.25rem;
   padding-bottom: 1.25rem;
+}
+
+.py-2\.5 {
+  padding-top: .625rem;
+  padding-bottom: .625rem;
 }
 
 .pb-3 {
@@ -1723,10 +1729,6 @@ body:is(.dark *) {
   opacity: .75;
 }
 
-.opacity-0 {
-  opacity: 0;
-}
-
 .shadow-2xl {
   --tw-shadow: 0 25px 50px -12px #00000040;
   --tw-shadow-colored: 0 25px 50px -12px var(--tw-shadow-color);
@@ -1805,14 +1807,6 @@ body:is(.dark *) {
   40%, 80% {
     transform: translateX(8px);
   }
-}
-
-.\[background\:radial-gradient\(125\%_125\%_at_50\%_10\%\,\#059669_40\%\,transparent_100\%\)\] {
-  background: radial-gradient(125% 125% at 50% 10%, #059669 40%, #0000 100%);
-}
-
-.\[background\:radial-gradient\(125\%_125\%_at_50\%_10\%\,\#fff_40\%\,transparent_100\%\)\] {
-  background: radial-gradient(125% 125% at 50% 10%, #fff 40%, #0000 100%);
 }
 
 .hover\:scale-105:hover {
