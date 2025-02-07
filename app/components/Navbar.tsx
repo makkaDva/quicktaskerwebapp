@@ -228,11 +228,7 @@ export default function Navbar() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => {
-              if (!userEmail) {
-                router.push('/register-page');
-              } else {
                 router.push('/post-jobs');
-              }
             }}
             className="bg-gradient-to-br from-green-600 to-emerald-500 text-white px-6 py-2.5 rounded-full text-md font-semibold flex items-center gap-2 shadow-lg hover:shadow-emerald-100"
           >

@@ -181,11 +181,11 @@ const PostJob = () => {
   const handleFinish = async () => {
     const { data, error } = await supabase.auth.getUser();
 
-    if (error) {
-      console.error("Error fetching user:", error.message);
-      alert("Error checking authentication. Please try again.");
-      return;
-    }
+    // if (error) {
+    //   console.error("Error fetching user:", error.message);
+    //   alert("Error checking authentication. Please try again.");
+    //   return;
+    // }
 
     if (!data.user) {
       alert("You are not logged in. Please log in to post a job.");
