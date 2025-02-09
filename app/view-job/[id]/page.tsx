@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import supabase from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
-import { FaMapMarkerAlt, FaCalendarAlt, FaEnvelope, FaPhoneAlt, FaEuroSign, FaUsers, FaArrowLeft } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaCalendarAlt, FaEnvelope, FaPhoneAlt, FaEuroSign, FaUsers, FaArrowLeft, FaTrash } from 'react-icons/fa';
 import dynamic from 'next/dynamic';
 import 'leaflet/dist/leaflet.css';
 import { Spinner } from '@/components/ui/spinner';
@@ -29,6 +29,9 @@ interface Job {
   broj_radnika: number;
   latitude: number;
   longitude: number;
+  date_from: string;
+  date_to: string;
+  hours_per_day: number;
 }
 
 const fadeInUp = {
@@ -47,8 +50,31 @@ export default function ViewJob() {
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [L, setL] = useState<any>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { id } = useParams();
   const router = useRouter();
+
+  useEffect(() => {
+    const checkIfAdmin = async () => {
+      if (!currentUserEmail) return;
+
+      const { data, error } = await supabase
+        .from("admins")
+        .select("email")
+        .eq("email", currentUserEmail)
+        .single();
+
+      if (error) {
+        console.error("Error checking admin status:", error);
+        return;
+      }
+
+      setIsAdmin(!!data); // If data exists, the user is an admin
+    };
+
+    checkIfAdmin();
+  }, [currentUserEmail]);
 
   useEffect(() => {
     import('leaflet').then((leaflet) => {
@@ -73,7 +99,17 @@ export default function ViewJob() {
       }
     };
 
-    if (id) fetchJob();
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserEmail(user.email || ""); // Ensures it is always a string
+      }
+    };
+
+    if (id) {
+      fetchJob();
+      fetchUser();
+    }
   }, [id]);
 
   const handleBackToList = () => router.push('/find-jobs');
@@ -115,6 +151,38 @@ export default function ViewJob() {
       alert(error.message || 'Application failed. Please try again.');
     } finally {
       setApplying(false);
+    }
+  };
+
+  const handleDeleteJob = async () => {
+    if (!job || !currentUserEmail) return;
+
+    // Check if the user is an admin
+    const { data: adminData, error: adminError } = await supabase
+      .from("admins")
+      .select("email")
+      .eq("email", currentUserEmail)
+      .single();
+
+    const isAdmin = !!adminData; // Returns true if the user is an admin
+    const isJobPoster = currentUserEmail === job.user_email;
+
+    // Only job poster or admin can delete
+    if (!isAdmin && !isJobPoster) {
+      alert("You don't have permission to delete this job.");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from("jobs").delete().eq("id", job.id);
+
+      if (error) throw error;
+
+      alert("Job deleted successfully.");
+      router.push("/find-jobs");
+    } catch (error) {
+      console.error("Error deleting job:", error);
+      alert("Failed to delete job. Please try again.");
     }
   };
 
@@ -266,6 +334,28 @@ export default function ViewJob() {
                       <p className="text-gray-600 break-all">{job.user_email}</p>
                     </div>
                   </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <FaCalendarAlt className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Work Period</h3>
+                      <p className="text-gray-600">
+                        {new Date(job.date_from).toLocaleDateString()} - {new Date(job.date_to).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                      <FaUsers className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Work Hours</h3>
+                      <p className="text-gray-600">{job.hours_per_day} hours/day</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -279,6 +369,7 @@ export default function ViewJob() {
 
             {/* Map Section */}
             <motion.div
+            style={{zIndex: 0}}
               variants={fadeInUp}
               className="h-full w-full rounded-2xl overflow-hidden shadow-xl border border-gray-100"
             >
@@ -327,6 +418,23 @@ export default function ViewJob() {
               <p className="text-red-600 mt-2">This position is no longer available</p>
             )}
           </motion.div>
+
+          {/* Delete Button (Conditional) */}
+          {currentUserEmail && (currentUserEmail === job.user_email || isAdmin) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 text-center"
+            >
+              <button
+                onClick={handleDeleteJob}
+                className="bg-red-600 text-white px-12 py-4 rounded-full text-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2"
+              >
+                <FaTrash className="w-5 h-5" />
+                Delete Job
+              </button>
+            </motion.div>
+          )}
         </motion.div>
       </section>
     </div>

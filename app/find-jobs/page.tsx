@@ -164,7 +164,7 @@ export default function FindJobs() {
               >
                 <div className="mb-4 flex items-center justify-between">
                   <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
-                    {job.wage_type === 'per_day' ? 'Daily Rate' : 'Hourly Rate'}
+                    {job.wage_type === 'per_day' ? 'Daily Rate' : 'Job offer'}
                   </span>
                   <span className="text-sm text-gray-500">
                     {new Date(job.created_at).toLocaleDateString()}
