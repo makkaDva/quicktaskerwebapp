@@ -146,7 +146,7 @@ const PostJob = () => {
         road: result.components.road || '',
         lat: result.geometry.lat,
         lng: result.geometry.lng,
-        country: result.components.country.toLowerCase(),
+        country: result.components.country,
       })));
     } catch (error) {
       alert('Failed to fetch location suggestions');
@@ -156,16 +156,20 @@ const PostJob = () => {
   };
 
   const handleSelect = (
-    formatted: string, 
-    city: string, 
-    road: string, 
-    lat: number, 
-    lng: number, 
+    formatted: string,
+    city: string,
+    road: string,
+    lat: number,
+    lng: number,
     country: string
   ) => {
     setLocation(formatted);
     setSelectedCity({ city, lat, lng, country });
-    setCountryCode(countryCodes[country as keyof typeof countryCodes] || '+381');
+
+    // Update countryCode based on the selected country
+    const code = countryCodes[country as keyof typeof countryCodes] || '+381';
+    setCountryCode(code);
+
     setSuggestions([]);
   };
 
@@ -175,43 +179,43 @@ const PostJob = () => {
     switch(step) {
       case 1:
         if (!selectedCity) {
-          alert('Molimo izaberite lokaciju');
+          alert('Pease choose location of the work');
           return;
         }
         break;
       case 2:
         if (!phoneNumber) {
-          alert('Unesite broj telefona');
+          alert('Please enter your phone number');
           return;
         }
         break;
       case 3:
         if (!wage || !wageType) {
-          alert('Unesite iznos i tip plate');
+          alert('Please enter wage and wage type');
           return;
         }
         break;
       case 4:
         if (!dateFrom || !dateTo) {
-          alert('Izaberite datume');
+          alert('Please choose date');
           return;
         }
         break;
       case 5:
         if (!numberOfWorkingHours) {
-          alert('Unesite broj radnih sati');
+          alert('Please enter number of working hours');
           return;
         }
         break;
       case 6:
         if (!numberOfWorkers) {
-          alert('Unesite broj radnika');
+          alert('Please enter number of workers needed');
           return;
         }
         break;
       case 7:
         if (!jobDescription) {
-          alert('Napišite opis posla');
+          alert('Please enter job description');
           return;
         }
         break;
@@ -232,7 +236,7 @@ const PostJob = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        alert('Morate biti ulogovani!');
+        alert('You have to be logged in!');
         window.open('/login', '_blank', 'width=500,height=600');
         return;
       }
@@ -260,7 +264,7 @@ const PostJob = () => {
 
       if (error) throw error;
       
-      alert('Oglas uspešno postavljen!');
+      alert('Job posted successfully!');
       setStep(1);
       setLocation('');
       setSelectedCity(null);
@@ -274,7 +278,7 @@ const PostJob = () => {
       
     } catch (error) {
       console.error('Greška:', error);
-      alert('Došlo je do greške pri postavljanju oglasa');
+      alert('Error occured while posting the job');
     }
   };
 
@@ -337,7 +341,7 @@ const PostJob = () => {
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Unesite grad, ulicu (npr. Beograd Knez Mihajlova 6)"
+                  placeholder="Enter city, street and number (example: Beograd Knez Mihajlova 6)"
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
                 />
                 {isLoading && (
@@ -414,7 +418,7 @@ const PostJob = () => {
               type="text"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="Broj telefona"
+              placeholder="Phone number"
               className="flex-2 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all mx-auto"
             />
           </div>
@@ -424,27 +428,27 @@ const PostJob = () => {
         return (
           <div className="grid md:grid-cols-2 gap-6 w-full max-w-2xl">
             <div className="space-y-2">
-              <label className="text-gray-600 font-medium">Iznos plate</label>
+              <label className="text-gray-600 font-medium">Wage amount</label>
               <div className="relative">
                 <input
                   type="number"
                   value={wage}
                   onChange={(e) => setWage(e.target.value)}
-                  placeholder="Unesite iznos (npr. 1000)"
+                  placeholder="Enter amount (example 100)"
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all pr-12"
                 />
                 <span className="absolute right-4 top-3.5 text-gray-400">€</span>
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-gray-600 font-medium">Način isplate</label>
+              <label className="text-gray-600 font-medium">Wage type</label>
               <select
                 value={wageType}
                 onChange={(e) => setWageType(e.target.value as 'Per day' | 'Per hour')}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all"
               >
-                <option value="Per day">Dnevnica</option>
-                <option value="Per hour">Po satu</option>
+                <option value="Per day">Per day</option>
+                <option value="Per hour">Per hour</option>
               </select>
             </div>
           </div>
@@ -462,7 +466,7 @@ const PostJob = () => {
                     </h3>
                   </div>
                   <div className="grid grid-cols-7 gap-1">
-                    {['Pon', 'Ut', 'Sr', 'Čet', 'Pet', 'Sub', 'Ned'].map((day) => (
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
                       <div key={day} className="text-center text-sm text-green-600 font-medium p-1">
                         {day}
                       </div>
@@ -495,7 +499,7 @@ const PostJob = () => {
                     </h3>
                   </div>
                   <div className="grid grid-cols-7 gap-1">
-                    {['Pon', 'Ut', 'Sr', 'Čet', 'Pet', 'Sub', 'Ned'].map((day) => (
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
                       <div key={day} className="text-center text-sm text-green-600 font-medium p-1">
                         {day}
                       </div>
@@ -532,7 +536,7 @@ const PostJob = () => {
                   onClick={() => { setDateFrom(''); setDateTo(''); }}
                   className="text-green-600 hover:text-green-700 text-sm font-medium"
                 >
-                  Resetuj izbor
+                  Reset
                 </button>
               </div>
             </div>
@@ -543,7 +547,7 @@ const PostJob = () => {
     <div className="w-full max-w-md mx-auto space-y-10 px-4">
       {/* Naslov */}
       <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
-        Unesite broj radnih sati
+        Enter number of working hours
       </h2>
 
       {/* Brojač sa dugmadima */}
@@ -574,15 +578,14 @@ const PostJob = () => {
 
       {/* Opcije */}
       <div className="space-y-6 pt-6">
-        <h3 className="text-lg font-semibold text-gray-700 text-center">Preporuke</h3>
+        <h3 className="text-lg font-semibold text-gray-700 text-center">Advice</h3>
         
         <div className="flex flex-col gap-4">
           <div className="flex items-start gap-3 mx-auto">
             <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
             <div className="text-center">
               <p className="text-gray-600">
-                Optimalno 8 sati dnevno<br />
-                za zdrav radni ritam
+                8 is hours optimal<br /> 
               </p>
             </div>
           </div>
@@ -591,8 +594,8 @@ const PostJob = () => {
             <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
             <div className="text-center">
               <p className="text-gray-600">
-                Maksimalno dozvoljeno 24 sata<br />
-                (sa prekovremenim)
+                24 hours is maximum<br />
+                
               </p>
             </div>
           </div>
@@ -607,7 +610,7 @@ const PostJob = () => {
       <div className="w-full max-w-md mx-auto space-y-10 px-4">
         {/* Naslov */}
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
-          Koliko radnika vam je potrebno?
+          How many workers do you need?
         </h2>
   
         {/* Brojač sa dugmadima */}
@@ -651,14 +654,15 @@ const PostJob = () => {
     );
 
       case 7:
+        
         return (
-          <div className="w-full max-w-2xl">
-            <div className="space-y-2">
-              <label className="text-gray-600 font-medium">Opis posla</label>
+          <div className="w-full max-w-2xl mx-auto flex justify-center items-center h-full">
+            <div className="space-y-2 w-full">
+              <label className="text-gray-600 font-medium"></label>
               <textarea
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
-                placeholder="Opisite posao, zahteve i sve bitne informacije"
+                placeholder="Describe the job, requirements and any imporant information"
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all h-48"
               />
             </div>
@@ -681,7 +685,7 @@ const PostJob = () => {
             className={`${step === 1 ? 'invisible' : 'visible'} bg-white text-green-600 px-6 py-2 rounded-lg text-md font-medium hover:bg-green-50 transition-all shadow-sm flex items-center gap-2 border border-green-100`}
           >
             <ChevronLeft className="w-4 h-4" />
-            Nazad
+            Back
           </motion.button>
 
           <div className="flex flex-col items-center gap-2">
@@ -702,13 +706,13 @@ const PostJob = () => {
               {step === 6 && <Users className="w-6 h-6 text-green-600" />}
               {step === 7 && <FileText className="w-6 h-6 text-green-600" />}
               <h2 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
-                {step === 1 && "Lokacija posla"}
-                {step === 2 && "Kontakt podaci"}
-                {step === 3 && "Plata"}
-                {step === 4 && "Datumi"}
-                {step === 5 && "Radno vreme"}
-                {step === 6 && "Broj radnika"}
-                {step === 7 && "Opis posla"}
+                {step === 1 && "Job location"}
+                {step === 2 && "Phone number"}
+                {step === 3 && "Wage"}
+                {step === 4 && "Date"}
+                {step === 5 && "Working time"}
+                {step === 6 && "Number of workers"}
+                {step === 7 && "Job description"}
               </h2>
             </div>
           </div>
@@ -719,7 +723,7 @@ const PostJob = () => {
             onClick={step === 7 ? handleFinish : handleContinue}
             className="bg-gradient-to-br from-green-600 to-emerald-500 text-white px-6 py-2 rounded-lg text-md font-medium hover:from-green-700 hover:to-emerald-600 transition-all shadow-md flex items-center gap-2"
           >
-            {step === 7 ? 'Objavi oglas' : 'Sledeće'}
+            {step === 7 ? 'Finish posting job' : 'Continue'}
             <ChevronRight className="w-4 h-4" />
           </motion.button>
         </div>
