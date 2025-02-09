@@ -113,3 +113,24 @@
     40%, 80% { transform: translateX(8px); }
   }
 }
+@keyframes bounce-marker {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-bounce-marker {
+  animation: bounce-marker 1s ease-in-out 3;
+}
+
+.leaflet-container {
+  z-index: 0 !important;
+}
+
+.custom-popup .leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.custom-popup .leaflet-popup-content {
+  margin: 8px;
+}
