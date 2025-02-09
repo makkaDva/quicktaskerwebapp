@@ -69,6 +69,8 @@ const PostJob = () => {
   const [jobDescription, setJobDescription] = useState(''); // Job description
   const [isLoggedIn, setIsLoggedIn] = useState(true); // Replace with actual login check logic
   const [countryCode, setCountryCode] = useState('+381'); // Default country code
+  
+
 
   useEffect(() => {
     if (location) {
@@ -233,81 +235,101 @@ const PostJob = () => {
       case 1:
         return (
           <div style={styles.stepContainer}>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Enter city, street (e.g., Smederevo Cegarska 17)"
-              style={styles.input}
-            />
-
-            {isLoading && <div style={styles.loading}>Loading...</div>}
-
-            <div>
-              {suggestions.map((suggestion, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleSelect(
-                    suggestion.formatted, // Full formatted address
-                    suggestion.city, // City name
-                    suggestion.road, // Road or street name
-                    suggestion.lat,
-                    suggestion.lng,
-                    suggestion.country
-                  )}
-                  style={styles.suggestionItem}
-                >
-                  {suggestion.formatted} {/* Display full formatted address */}
-                </div>
-              ))}
-            </div>
-
-            <div style={styles.mapContainer}>
-              <MapContainer
-                key={selectedCity ? selectedCity.lat + selectedCity.lng : 'default'} // Ensure re-render when selectedCity changes
-                center={selectedCity ? [selectedCity.lat, selectedCity.lng] : [51.505, -0.09]}
-                zoom={selectedCity ? 13 : 5} // Default zoom level when no city is selected
-                style={styles.map}
-              >
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                {selectedCity && (
-                  <Marker position={[selectedCity.lat, selectedCity.lng]} icon={markerIcon}>
-                    <Popup>{selectedCity.city}</Popup>
-                  </Marker>
-                )}
-              </MapContainer>
-            </div>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div style={styles.stepContainer}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Phone Number</label>
-              <div style={styles.phoneInputContainer}>
-                <select
-                  value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                  style={styles.select}
-                >
-                  {Object.entries(countryCodes).map(([country, code]) => (
-                    <option key={country} value={code}>
-                      {country} ({code})
-                    </option>
-                  ))}
-                </select>
+            <div style={styles.leftContainer}>
+              <div style={styles.locationText}>
+                Na kojoj <span style={styles.greenText}>lokaciji</span> nudite posao?
+              </div>
+              <div style={styles.inputContainer}>
                 <input
                   type="text"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="Enter your phone number"
-                  style={styles.phoneInput}
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Enter city, street (e.g., Beograd Knez Mihajlova 6)"
+                  style={styles.input}
                 />
+                <button 
+                  style={styles.continueButtonCase1} 
+                  onClick={handleContinue}
+                >
+                  Continue <FaArrowRight style={styles.arrowIcon} />
+                </button>
+              </div>
+        
+              {isLoading && <div style={styles.loading}>Loading...</div>}
+        
+              <div style={styles.suggestionList}>
+                {suggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    onClick={() => handleSelect(
+                      suggestion.formatted, 
+                      suggestion.city, 
+                      suggestion.road, 
+                      suggestion.lat,
+                      suggestion.lng,
+                      suggestion.country
+                    )}
+                    style={styles.suggestionItem}
+                  >
+                    {suggestion.formatted}
+                  </div>
+                ))}
+              </div>
+            </div>
+        
+            <div style={styles.rightContainer}>
+              <div style={styles.mapContainer}>
+                <MapContainer
+                  key={selectedCity ? selectedCity.lat + selectedCity.lng : 'default'}
+                  center={selectedCity ? [selectedCity.lat, selectedCity.lng] : [51.505, -0.09]}
+                  zoom={selectedCity ? 13 : 5}
+                  style={styles.map}
+                >
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  {selectedCity && (
+                    <Marker position={[selectedCity.lat, selectedCity.lng]} icon={markerIcon}>
+                      <Popup>{selectedCity.city}</Popup>
+                    </Marker>
+                  )}
+                </MapContainer>
               </div>
             </div>
           </div>
         );
+        
+      
+      
+
+        case 2:
+          return (
+            <div style={styles.stepContainer}>
+              <div style={styles.inputGroup}>
+                <label style={styles.phoneLabel}>
+                  Enter your <span style={styles.greenText}>phone number</span>
+                </label>
+                <div style={styles.phoneInputContainer}>
+                  <select
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    style={styles.select}
+                  >
+                    {Object.entries(countryCodes).map(([country, code]) => (
+                      <option key={country} value={code}>
+                        {country} ({code})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="Enter your phone number"
+                    style={styles.phoneInput}
+                  />
+                </div>
+              </div>
+            </div>
+          );
 
       case 3:
         return (
@@ -415,20 +437,23 @@ const PostJob = () => {
   return (
     <div style={styles.container}>
       <div style={styles.topButtons}>
-        {step > 1 && (
+        {step > 1 && step < 7 && (
           <button onClick={handleBack} style={styles.backButton}>
+            <span style={styles.backButton}>Back</span>
             <FaArrowLeft style={styles.backIcon} />
           </button>
         )}
-        <button
-          onClick={step === 7 ? handleFinish : handleContinue}
-          style={styles.continueButton}
-        >
-          <span style={styles.continueText}>Continue</span>
-          <FaArrowRight style={styles.continueIcon} />
-        </button>
+        {step > 1 && step < 7 && (
+          <button
+            onClick={step === 7 ? handleFinish : handleContinue}
+            style={styles.continueButton}
+          >
+            <span style={styles.continueText}>Continue</span>
+            <FaArrowRight style={styles.continueIcon} />
+          </button>
+        )}
       </div>
-
+  
       {renderStepContent()}
     </div>
   );
@@ -438,113 +463,179 @@ const PostJob = () => {
 
 // Define styles with explicit typing
 const styles: { [key: string]: CSSProperties } = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100vh',
-    padding: '20px',
-    backgroundColor: '#f0f4f8',
+  locationText: {
+    fontSize: '26px', // 30% larger than before
+    fontWeight: 'bold',
+    marginBottom: '15px', // Increased space between text and input
+    lineHeight: '1.4',
   },
-  topButtons: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '20px',
+  greenText: {
+    color: '#28a745', // Greenish color for "lokaciji"
   },
   stepContainer: {
-    flex: 1,
+    display: 'flex',
+    gap: '10px', // Reduced gap between left and right containers
+    position: 'relative',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+  },
+  leftContainer: {
+    flex: 0.6, // Smaller input area
     display: 'flex',
     flexDirection: 'column',
-    gap: '20px',
+    gap: '20px', // Added more space between input elements
+    position: 'relative',
+    paddingLeft: '20px', // Shift content slightly right
+    paddingTop: '20px', // Shift content slightly down
+  },
+  inputContainer: {
+    display: 'flex',
+    alignItems: 'center', // Align input and button horizontally
+    gap: '10px', // Space between input and button
+    position: 'relative', // Make sure suggestions are positioned below input
   },
   input: {
-    width: '100%',
-    padding: '10px',
+    width: '80%', // Full width of the container, allowing space for button
+    height: '40px', // Fixed height
+    padding: '8px',
     border: '1px solid #ddd',
     borderRadius: '5px',
-    fontSize: '16px',
+    fontSize: '14px',
     backgroundColor: '#fff',
+    boxSizing: 'border-box', // Prevent resizing
+    zIndex: 1, // Make sure input stays on top of the suggestions
+  },
+  continueButton:{
+    backgroundColor: 'transparent', // No background
+    color: '#28a745', // Green text color
+    border: 'none',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'flex-end',
+    gap: '5px',
+    padding: '0px',
+  },
+  continueButtonCase1: {
+    backgroundColor: 'transparent', // No background
+    color: '#28a745', // Green text color
+    border: 'none',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    padding: '0px',
+  },
+  backButton: {
+    background: 'none', // No background color
+    border: 'none', // No border
+    color: 'red', // Red text color
+    fontSize: '18px', // Slightly larger font size for modern look
+    fontWeight: 'bold', // Make the text bold
+    cursor: 'pointer', // Pointer cursor to indicate it's clickable
+    display: 'flex',
+    alignItems: 'center',
+    padding: '10px 15px', // Some padding for better click area
+    position: 'absolute', // Absolute positioning
+    top: '20px', // Space from the top
+    left: '20px', // Space from the left
+  },
+  arrowIcon: {
+    fontSize: '18px',
   },
   loading: {
     textAlign: 'center',
     color: '#4CAF50',
   },
+  suggestionList: {
+    maxHeight: '200px', // Set max height to prevent jumping
+    overflowY: 'auto',   // Make suggestions scrollable
+    position: 'relative', // Keep suggestions above other elements
+    zIndex: 5, // Ensure suggestions appear above other elements but below input
+    backgroundColor: '#fff',
+    width: '80%',         // Match input width
+    boxShadow: '0 2px 5px rgba(0,0,0,0.15)', // Optional shadow for visibility
+    marginTop: '5px', // Ensure suggestions are positioned just below input
+    borderRadius: '5px',
+  },
   suggestionItem: {
     cursor: 'pointer',
-    padding: '10px',
+    padding: '8px',
     border: '1px solid #ddd',
     marginBottom: '5px',
     borderRadius: '5px',
     backgroundColor: '#fff',
+    zIndex: 10,
+  },
+  rightContainer: {
+   // paddingTop: 10,
+    flex: 1.4, // Larger map area
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    alignItems: 'center',
   },
   mapContainer: {
-    flex: 1.5,
+    zIndex: 0,
+    paddingTop: 10,
+    width: '75%',
+    height: '70vh', // 70% of viewport height
+    borderRadius: '10px',
+    overflow: 'hidden',
   },
   map: {
-    height: '400px',
     width: '100%',
-    borderRadius: '10px',
+    height: '100%',
   },
+  // Case 2: Phone Number
   inputGroup: {
-    marginBottom: '10px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center', // Center the input group
+    gap: '20px', // Space between label and input
+    width: '100%', // Full width
   },
-  label: {
-    fontSize: '14px',
-    color: '#4CAF50',
-    marginBottom: '5px',
+  phoneLabel: {
+    fontSize: '28px', // Big text
+    fontWeight: 'bold',
+    color: '#000', // Black text
+    textAlign: 'center', // Center the text
   },
+  // greenText: {
+  //   color: '#28a745', // Green text for "phone number"
+  // },
   phoneInputContainer: {
     display: 'flex',
+    alignItems: 'center',
     gap: '10px',
+    width: '80%', // Adjust width as needed
+    maxWidth: '500px', // Limit maximum width
   },
   select: {
     padding: '10px',
-    border: '1px solid #ddd',
+    border: '1px solid #28a745',
     borderRadius: '5px',
     backgroundColor: '#fff',
+    fontSize: '16px',
+    color: '#28a745',
+    cursor: 'pointer',
+    flex: 1, // Take available space
   },
   phoneInput: {
-    flex: 1,
+    flex: 2, // Take more space than the select
     padding: '10px',
-    border: '1px solid #ddd',
+    border: '1px solid #28a745',
     borderRadius: '5px',
     fontSize: '16px',
+    color: '#28a745',
     backgroundColor: '#fff',
-  },
-  textarea: {
-    width: '100%',
-    padding: '10px',
-    border: '1px solid #ddd',
-    borderRadius: '5px',
-    fontSize: '16px',
-    backgroundColor: '#fff',
-    height: '100px',
-  },
-  backButton: {
-    backgroundColor: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-  },
-  backIcon: {
-    fontSize: '24px',
-    color: '#4CAF50',
-  },
-  continueButton: {
-    backgroundColor: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  continueText: {
-    fontSize: '16px',
-    color: '#4CAF50',
-  },
-  continueIcon: {
-    fontSize: '20px',
-    color: '#4CAF50',
   },
 };
+
+
+
 
 export default PostJob;

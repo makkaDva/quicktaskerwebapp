@@ -369,6 +369,7 @@ export default function ViewJob() {
 
             {/* Map Section */}
             <motion.div
+            style={{zIndex: 0}}
               variants={fadeInUp}
               className="h-full w-full rounded-2xl overflow-hidden shadow-xl border border-gray-100"
             >
