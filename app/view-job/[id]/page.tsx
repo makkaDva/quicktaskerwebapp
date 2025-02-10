@@ -32,6 +32,7 @@ interface Job {
   date_from: string;
   date_to: string;
   hours_per_day: number;
+  applicants?: string[];
 }
 
 const fadeInUp = {
@@ -114,38 +115,130 @@ export default function ViewJob() {
 
   const handleBackToList = () => router.push('/find-jobs');
 
+  const handleAcceptApplicant = async (index: number) => {
+    if (!job || !job.applicants || job.applicants.length <= index) return;
+  
+    try {
+      // Decrement the number of available positions
+      const updatedBrojRadnika = job.broj_radnika - 1;
+  
+      // Remove the accepted applicant from the applicants array
+      const updatedApplicants = job.applicants.filter((_, i) => i !== index);
+  
+      // Update the job in Supabase
+      const { error } = await supabase
+        .from('jobs')
+        .update({
+          broj_radnika: updatedBrojRadnika,
+          applicants: updatedApplicants,
+        })
+        .eq('id', job.id);
+  
+      if (error) throw error;
+  
+      // Update the local state
+      setJob((prev) =>
+        prev
+          ? {
+              ...prev,
+              broj_radnika: updatedBrojRadnika,
+              applicants: updatedApplicants,
+            }
+          : null
+      );
+  
+      alert('Applicant accepted successfully!');
+    } catch (error) {
+      console.error('Error accepting applicant:', error);
+      alert('Failed to accept applicant. Please try again.');
+    }
+  };
+  
+  const handleDeclineApplicant = async (index: number) => {
+    if (!job || !job.applicants || job.applicants.length <= index) return;
+  
+    try {
+      // Remove the declined applicant from the applicants array
+      const updatedApplicants = job.applicants.filter((_, i) => i !== index);
+  
+      // Update the job in Supabase
+      const { error } = await supabase
+        .from('jobs')
+        .update({
+          applicants: updatedApplicants,
+        })
+        .eq('id', job.id);
+  
+      if (error) throw error;
+  
+      // Update the local state
+      setJob((prev) =>
+        prev
+          ? {
+              ...prev,
+              applicants: updatedApplicants,
+            }
+          : null
+      );
+  
+      alert('Applicant declined successfully!');
+    } catch (error) {
+      console.error('Error declining applicant:', error);
+      alert('Failed to decline applicant. Please try again.');
+    }
+  };
+
   const handleApplyForJob = async () => {
     if (!job || applying) return;
-    
+  
     try {
       setApplying(true);
       const { data: { user } } = await supabase.auth.getUser();
-      
+  
       if (!user) {
         router.push('/login');
         return;
       }
-
+  
       if (user.email === job.user_email) {
         alert('You cannot apply for your own job.');
         return;
       }
-
+  
       if (job.broj_radnika <= 0) {
         alert('No more workers needed for this job.');
         return;
       }
-
+  
+      // Get the applicant's name from the user metadata
+      const applicantName = user.user_metadata?.name || 'Unknown Applicant';
+  
+      // Check if the user has already applied for this job
+      if (job.applicants && job.applicants.includes(applicantName)) {
+        alert('You have already applied for this job.');
+        return;
+      }
+  
+      // Update the job to decrement the worker count and add the applicant's name
       const { error } = await supabase
         .from('jobs')
-        .update({ broj_radnika: job.broj_radnika - 1 })
+        .update({
+          broj_radnika: job.broj_radnika - 1,
+          applicants: [...(job.applicants || []), applicantName], // Add the applicant's name to the array
+        })
         .eq('id', job.id);
-
+  
       if (error) throw error;
-
-      setJob(prev => prev ? { ...prev, broj_radnika: prev.broj_radnika - 1 } : null);
+  
+      // Update the local state to reflect the changes
+      setJob(prev => prev ? {
+        ...prev,
+        broj_radnika: prev.broj_radnika - 1,
+        applicants: [...(prev.applicants || []), applicantName],
+      } : null);
+  
       alert('Application successful! The job poster has been notified.');
-
+  
     } catch (error: any) {
       console.error('Application failed:', error);
       alert(error.message || 'Application failed. Please try again.');
@@ -369,7 +462,7 @@ export default function ViewJob() {
 
             {/* Map Section */}
             <motion.div
-            style={{zIndex: 0}}
+              style={{ zIndex: 0 }}
               variants={fadeInUp}
               className="h-full w-full rounded-2xl overflow-hidden shadow-xl border border-gray-100"
             >
@@ -393,6 +486,68 @@ export default function ViewJob() {
               )}
             </motion.div>
           </motion.div>
+
+          {/* Applicants Table (Conditional) */}
+          {currentUserEmail && currentUserEmail === job.user_email && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-12"
+            >
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Applicants</h3>
+              {job.applicants && job.applicants.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-white rounded-lg shadow-lg border border-gray-100">
+                    <thead className="bg-green-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                          Applied On
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {job.applicants.map((applicant, index) => (
+                        <tr key={index} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {applicant}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {new Date(job.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleAcceptApplicant(index)}
+                                className="p-1.5 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
+                                title="Accept"
+                              >
+                                ✔️
+                              </button>
+                              <button
+                                onClick={() => handleDeclineApplicant(index)}
+                                className="p-1.5 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+                                title="Decline"
+                              >
+                                🛇
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-gray-600">No applicants yet.</p>
+              )}
+            </motion.div>
+          )}
 
           {/* Apply Button */}
           <motion.div
