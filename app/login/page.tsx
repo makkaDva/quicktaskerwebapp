@@ -1,8 +1,9 @@
 "use client";
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import supabase from "../../lib/supabase";
 import { FaGoogle } from "react-icons/fa";
+import Router from 'next/router';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -10,6 +11,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault(); // Prevent the default form submission behavior
@@ -28,6 +31,10 @@ export default function LoginPage() {
   
       // If successful, redirect the user to the dashboard or home page
       router.push('/find-jobs'); // Adjust the redirect path as needed
+
+      // Notify the parent window that login was successful
+      window.opener.postMessage('login-success', window.location.origin);
+      window.close();
     } catch (err) {
       // Handle any errors that occur during the login process
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -42,10 +49,10 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
+          redirectTo: `${window.location.origin}/auth/callback`, // Redirect to the callback page
+        },
       });
-
+  
       if (error) throw error;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google login failed');
@@ -74,13 +81,12 @@ export default function LoginPage() {
         </button>
 
         <div className="relative flex items-center w-full my-4">
-  <div className="flex-grow border-t border-gray-300"></div>
-  <span className="px-3 bg-white dark:bg-gray-800 text-gray-500 text-sm">
-    Or sign in with email
-  </span>
-  <div className="flex-grow border-t border-gray-300"></div>
-</div>
-
+          <div className="flex-grow border-t border-gray-300"></div>
+          <span className="px-3 bg-white dark:bg-gray-800 text-gray-500 text-sm">
+            Or sign in with email
+          </span>
+          <div className="flex-grow border-t border-gray-300"></div>
+        </div>
 
         <div className="space-y-4">
           <div>
@@ -111,14 +117,12 @@ export default function LoginPage() {
         </div>
 
         <button
-        type="submit"
-        className="auth-button bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600"
-        disabled={loading}
-         >
-       {loading ? 'Loading...' : 'SIGN IN'}
+          type="submit"
+          className="auth-button bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600"
+          disabled={loading}
+        >
+          {loading ? 'Loading...' : 'SIGN IN'}
         </button>
-
-
 
         <p className="text-center text-sm text-gray-600 dark:text-gray-400">
           Don't have an account?{' '}

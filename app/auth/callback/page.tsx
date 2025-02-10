@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from '@supabase/supabase-js'; // Fixed package name
+import { createClient } from '@supabase/supabase-js';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -12,20 +12,42 @@ export default function AuthCallbackPage() {
   );
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN") {
-        router.push("/find-jobs");
+    let messageSent = false;
+  
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && !messageSent) {
+        // Notify parent window about successful login
+        if (window.opener) {
+          window.opener.postMessage('login-success', window.location.origin);
+          messageSent = true; // Ensure the message is only sent once
+        }
+        
+        // Close the popup window
+        window.close();
       }
     });
+  
+    // Fallback in case auth state doesn't change
+    const timeout = setTimeout(() => {
+      if (!messageSent) {
+        window.opener?.postMessage('login-timeout', window.location.origin);
+        window.close();
+      }
+    }, 5000); // 5 seconds timeout
+  
+    return () => {
+      subscription?.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100"> {/* Removed extra hyphen */}
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4"> {/* Fixed class names */}
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">
           Processing authentication...
         </h1>
-        <p className="text-gray-600"> {/* Fixed className syntax */}
+        <p className="text-gray-600">
           Please wait while we log you in.
         </p>
       </div>

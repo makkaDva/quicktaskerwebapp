@@ -2,11 +2,12 @@
 import { motion } from 'framer-motion';
 import { MapPin, Phone, Wallet, Calendar, Clock, Users, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import supabase from '@/lib/supabase';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import dynamic from 'next/dynamic';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useRouter } from 'next/navigation';
 
 const MapContainer = dynamic(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
@@ -115,6 +116,7 @@ interface OpenCageResponse {
 }
 
 const PostJob = () => {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [location, setLocation] = useState('');
   const [suggestions, setSuggestions] = useState<{ formatted: string; city: string; road: string; lat: number; lng: number; country: string }[]>([]);
@@ -166,10 +168,8 @@ const PostJob = () => {
     setLocation(formatted);
     setSelectedCity({ city, lat, lng, country });
 
-    // Update countryCode based on the selected country
     const code = countryCodes[country as keyof typeof countryCodes] || '+381';
     setCountryCode(code);
-
     setSuggestions([]);
   };
 
@@ -229,70 +229,123 @@ const PostJob = () => {
     setStep(prev => Math.max(1, prev - 1));
   };
 
-  const handleFinish = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        alert('You have to be logged in!');
-        window.open('/login', '_blank', 'width=500,height=600');
-        return;
+  const isSubmitting = useRef(false);
+
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      console.log('Message received:', event.data); // Debugging line
+      //if (event.origin !== window.location.origin || isSubmitting.current) return;
+  
+      if (event.data === 'login-success') {
+        console.log('Login success message received'); // Debugging line
+        isSubmitting.current = true;
+  
+        // Get the authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          alert('Login failed. Please try again.');
+          isSubmitting.current = false;
+          return;
+        }
+  
+        try {
+          // Use the submitJob function to post the job
+          await submitJob(user);
+        } catch (error) {
+          alert('An error occurred while posting the job.');
+        } finally {
+          isSubmitting.current = false;
+        }
       }
+    };
+  
+    // Add the event listener for messages
+    window.addEventListener('message', handleMessage);
+  
+    // Cleanup the event listener on unmount
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []); // Empty dependency array ensures this runs only onc
 
-      const jobData = {
-        grad: selectedCity?.city || '',
-        adresa: location,
-        opis: jobDescription,
-        dnevnica: parseFloat(wage),
-        user_email: user.email,
-        broj_telefona: phoneNumber,
-        broj_radnika: numberOfWorkers,
-        latitude: selectedCity?.lat || null,
-        longitude: selectedCity?.lng || null,
-        wage_type: wageType,
-        date_from: dateFrom,
-        date_to: dateTo,
-        drzava: selectedCity?.country || '',
-        hours_per_day: numberOfWorkingHours
-      };
+  const submitJob = async (user: any) => {
+    const jobData = {
+      grad: selectedCity?.city || '',
+      adresa: location,
+      opis: jobDescription,
+      dnevnica: parseFloat(wage),
+      user_email: user.email,
+      broj_telefona: phoneNumber,
+      broj_radnika: numberOfWorkers,
+      latitude: selectedCity?.lat || null,
+      longitude: selectedCity?.lng || null,
+      wage_type: wageType,
+      date_from: dateFrom,
+      date_to: dateTo,
+      drzava: selectedCity?.country || '',
+      hours_per_day: numberOfWorkingHours
+    };
 
-      const { error } = await supabase
-        .from('jobs')
-        .insert(jobData);
-
-      if (error) throw error;
-      
-      alert('Job posted successfully!');
-      setStep(1);
-      setLocation('');
-      setSelectedCity(null);
-      setPhoneNumber('');
-      setWage('');
-      setDateFrom('');
-      setDateTo('');
-      setNumberOfWorkingHours(8);
-      setNumberOfWorkers(1);
-      setJobDescription('');
-      
-    } catch (error) {
-      console.error('Greška:', error);
-      alert('Error occured while posting the job');
-    }
+    const { error } = await supabase.from('jobs').insert(jobData);
+    if (error) return alert('Job post failed');
+    
+    alert('Job posted successfully!');
+    resetForm();
+    router.push('/find-jobs');
+    window.location.reload();
   };
 
+  const resetForm = () => {
+    setStep(1);
+    setLocation('');
+    setSelectedCity(null);
+    setPhoneNumber('');
+    setWage('');
+    setDateFrom('');
+    setDateTo('');
+    setNumberOfWorkingHours(8);
+    setNumberOfWorkers(1);
+    setJobDescription('');
+  };
+
+  const handleFinish = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    if (isSubmitting.current) return;
+  
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      isSubmitting.current = true;
+      window.open('/login', '_blank', 'width=500,height=600');
+      return;
+    }
+  
+    try {
+      isSubmitting.current = true;
+      
+      // Use the submitJob function instead of direct submission
+      await submitJob(user);
+  
+      //alert('Job posted successfully!');
+      resetForm();
+      router.push('/find-jobs');
+    
+    } catch (error) {
+      alert('An error occurred while posting the job.');
+    } finally {
+      isSubmitting.current = false;
+    }
+  };
 
   const generateCalendarDays = (month: number, year: number) => {
     const date = new Date(year, month, 1);
     const days = [];
     
-    // Popuni prazna mesta za prvi dan u mesecu
     for (let i = 0; i < date.getDay(); i++) {
       days.push({ date: new Date(year, month, -i), isCurrentMonth: false, isDisabled: true });
     }
-  
-    // Popuni dane u mesecu
+
     while (date.getMonth() === month) {
       days.push({ 
         date: new Date(date),
@@ -301,7 +354,7 @@ const PostJob = () => {
       });
       date.setDate(date.getDate() + 1);
     }
-  
+
     return days.reverse().slice(0, 35).reverse();
   };
   
@@ -673,6 +726,8 @@ const PostJob = () => {
         return null;
     }
   };
+
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12">
