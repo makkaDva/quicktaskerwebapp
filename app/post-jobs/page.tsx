@@ -293,7 +293,7 @@ const PostJob = () => {
     alert('Job posted successfully!');
     resetForm();
     router.push('/find-jobs');
-    window.location.reload();
+    //window.location.reload();
   };
 
   const resetForm = () => {
@@ -329,7 +329,7 @@ const PostJob = () => {
   
       //alert('Job posted successfully!');
       resetForm();
-      router.push('/find-jobs');
+      //router.push('/find-jobs');
     
     } catch (error) {
       alert('An error occurred while posting the job.');

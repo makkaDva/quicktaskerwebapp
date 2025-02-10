@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, PlusCircle, User, LogIn, UserPlus } from 'lucide-react';
+import { Search, PlusCircle, User, LogIn, UserPlus, Briefcase, FileText } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import supabase from '@/lib/supabase';
@@ -274,6 +274,22 @@ export default function Navbar() {
                     >
                       <User className="w-4 h-4" />
                       View Profile
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ x: 5 }}
+                      onClick={() => router.push('/auth/my-jobs')}
+                      className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <Briefcase className="w-4 h-4" /> {/* You can use an appropriate icon */}
+                      My Jobs
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ x: 5 }}
+                      onClick={() => router.push('/auth/my-job-applications')}
+                      className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <FileText className="w-4 h-4" /> {/* Use an appropriate icon */}
+                      My Job Applications
                     </motion.button>
                     <motion.button
                       whileHover={{ x: 5 }}
