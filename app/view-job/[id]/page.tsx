@@ -213,11 +213,17 @@ export default function ViewJob() {
       // Get the applicant's name from the user metadata
       const applicantName = user.user_metadata?.name || 'Unknown Applicant';
   
+      // Check if the user has already applied for this job
+      if (job.applicants && job.applicants.includes(applicantName)) {
+        alert('You have already applied for this job.');
+        return;
+      }
+  
       // Update the job to decrement the worker count and add the applicant's name
       const { error } = await supabase
         .from('jobs')
         .update({
-          //broj_radnika: job.broj_radnika - 1,
+          broj_radnika: job.broj_radnika - 1,
           applicants: [...(job.applicants || []), applicantName], // Add the applicant's name to the array
         })
         .eq('id', job.id);
@@ -227,7 +233,7 @@ export default function ViewJob() {
       // Update the local state to reflect the changes
       setJob(prev => prev ? {
         ...prev,
-        //broj_radnika: prev.broj_radnika - 1,
+        broj_radnika: prev.broj_radnika - 1,
         applicants: [...(prev.applicants || []), applicantName],
       } : null);
   
