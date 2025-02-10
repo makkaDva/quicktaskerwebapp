@@ -16,25 +16,27 @@ export default function AuthCallbackPage() {
   
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && !messageSent) {
-        // Notify parent window about successful login
+        // Handle popup flow
         if (window.opener) {
           window.opener.postMessage('login-success', window.location.origin);
-          messageSent = true; // Ensure the message is only sent once
+          messageSent = true;
+          window.close();
         }
-        
-        // Close the popup window
-        window.close();
+        // Handle regular redirect flow
+        else {
+          router.push('/find-jobs');
+        }
       }
     });
   
     // Fallback in case auth state doesn't change
     const timeout = setTimeout(() => {
-      if (!messageSent) {
-        window.opener?.postMessage('login-timeout', window.location.origin);
+      if (!messageSent && window.opener) {
+        window.opener.postMessage('login-timeout', window.location.origin);
         window.close();
       }
-    }, 5000); // 5 seconds timeout
-  
+    }, 5000);
+
     return () => {
       subscription?.unsubscribe();
       clearTimeout(timeout);

@@ -101,6 +101,12 @@
   }
 }
 
+@media (pointer: coarse) {
+  .group:hover .group-hover\:opacity-100 {
+    opacity: 0 !important;
+  }
+}
+
 /* Custom animations */
 @layer utilities {
   .animate-shake {
