@@ -1,3 +1,4 @@
+// next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -12,18 +13,16 @@ const nextConfig: NextConfig = {
     ],
     domains: ['lh3.googleusercontent.com'],
   },
-  webpack: (config) => {
-    // Add aliases to fix @getbrevo/brevo imports
+  // DELETE THE ENTIRE WEBPACK SECTION BELOW
+  /* webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       'ApiClient': require.resolve('@getbrevo/brevo/src/ApiClient'),
       'api/AccountApi': require.resolve('@getbrevo/brevo/src/api/AccountApi'),
-      'api/CompaniesApi': require.resolve('@getbrevo/brevo/src/api/CompaniesApi'),
-      'api/ContactsApi': require.resolve('@getbrevo/brevo/src/api/ContactsApi'),
-      'api/ConversationsApi': require.resolve('@getbrevo/brevo/src/api/ConversationsApi')
+      // ... other Brevo aliases
     };
     return config;
-  }
+  } */
 };
 
 export default nextConfig;
