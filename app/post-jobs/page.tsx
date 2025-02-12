@@ -8,6 +8,8 @@ import dynamic from 'next/dynamic';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useRouter } from 'next/navigation';
+import { User } from '@supabase/supabase-js';
+import { useCallback } from 'react';
 
 const MapContainer = dynamic(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
@@ -230,14 +232,16 @@ const PostJob = () => {
 
   const isSubmitting = useRef(false);
 
-  const submitJob = async (user: any) => {
+  
+
+  const submitJob = useCallback(async (user: User) => {
     const jobData = {
       grad: selectedCity?.city || '',
       adresa: location,
       opis: jobDescription,
       dnevnica: parseFloat(wage),
       user_email: user.email,
-      broj_telefona: countryCode+phoneNumber,
+      broj_telefona: countryCode + phoneNumber,
       broj_radnika: numberOfWorkers,
       latitude: selectedCity?.lat || null,
       longitude: selectedCity?.lng || null,
@@ -246,30 +250,28 @@ const PostJob = () => {
       date_to: dateTo,
       drzava: selectedCity?.country || '',
       hours_per_day: numberOfWorkingHours,
-      vrsta_posla: typeOfWork // Add the new field
+      vrsta_posla: typeOfWork
     };
-
-   // const { error } = await supabase.from('jobs').insert(jobData);
-    //if (error) return alert('Job post failed');
-    
+  
+    const { error } = await supabase.from('jobs').insert(jobData);
+    if (error) return alert('Job post failed');
+  
     alert('Job posted successfully!');
     resetForm();
     router.push('/find-jobs');
-    //window.location.reload();
-  };
-
+  }, [
+    selectedCity, location, jobDescription, wage, countryCode, phoneNumber,
+    numberOfWorkers, wageType, dateFrom, dateTo, numberOfWorkingHours, typeOfWork, router
+  ]);
+  
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
-      console.log('Message received:', event.data); // Debugging line
-      //if (event.origin !== window.location.origin || isSubmitting.current) return;
+      if (event.origin !== window.location.origin || isSubmitting.current) return;
   
       if (event.data === 'login-success') {
-        console.log('Login success message received'); // Debugging line
         isSubmitting.current = true;
-  
-        // Get the authenticated user
         const { data: { user } } = await supabase.auth.getUser();
-        
+  
         if (!user) {
           alert('Login failed. Please try again.');
           isSubmitting.current = false;
@@ -277,24 +279,18 @@ const PostJob = () => {
         }
   
         try {
-          // Use the submitJob function to post the job
           await submitJob(user);
-        // } catch (error) {
-        //   alert('An error occurred while posting the job.');
-         } finally {
+        } finally {
           isSubmitting.current = false;
         }
       }
     };
   
-    // Add the event listener for messages
     window.addEventListener('message', handleMessage);
-  
-    // Cleanup the event listener on unmount
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, []); // Empty dependency array ensures this runs only onc
+  }, [submitJob]); // Add submitJob to dependencies
 
   const resetForm = () => {
     setStep(1);

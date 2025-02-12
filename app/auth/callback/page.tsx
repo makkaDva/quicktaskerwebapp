@@ -41,7 +41,7 @@ export default function AuthCallbackPage() {
       subscription?.unsubscribe();
       clearTimeout(timeout);
     };
-  }, [router]);
+  }, [router, supabase.auth]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

@@ -21,9 +21,20 @@ interface Job {
   applicants?: string[];
 }
 
+interface UserData {
+  id: string;
+  email?: string;
+  avatar_url?: string;
+  firstName: string;
+  lastName: string;
+  user_metadata?: {
+    name?: string;
+  };
+}
+
 const ProfilePage: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserData | null>(null); // Fixed type
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState<Job[]>([]);
