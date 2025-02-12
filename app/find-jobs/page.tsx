@@ -1,12 +1,13 @@
 'use client';
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import supabase from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaMapMarkerAlt, FaCalendarAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
 import { Spinner } from '@/components/ui/spinner';
 
 interface Job {
+  vrsta_posla: ReactNode;
   id: string;
   grad: string;
   adresa: string;
@@ -40,7 +41,7 @@ export default function FindJobs() {
   const wageTo = parseFloat(searchParams.get('wageTo') || 'Infinity');
   const dateFrom = searchParams.get('dateFrom') || '';
   const dateTo = searchParams.get('dateTo') || '';
-
+  const vrsta_posla = searchParams.get('vrsta_posla');
   // Sorting and filtering logic
   const sortedJobs = [...jobs].sort((a, b) => {
     const dateA = new Date(a.created_at).getTime();
@@ -71,7 +72,7 @@ export default function FindJobs() {
       try {
         const { data, error } = await supabase
           .from('jobs')
-          .select('id, grad, adresa, dnevnica, wage_type, created_at');
+          .select('id, grad, adresa, dnevnica, wage_type, created_at, vrsta_posla');
 
         if (error) throw error;
         setJobs(data?.filter((job) => job.id) || []);
@@ -122,7 +123,7 @@ export default function FindJobs() {
               </span>
             </motion.h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Discover local gigs that match your skills and availability
+              Discover local jobs that match your skills and availability
             </p>
           </div>
 
@@ -164,21 +165,21 @@ export default function FindJobs() {
               >
                 <div className="mb-4 flex items-center justify-between">
                   <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
-                    {job.wage_type === 'per_day' ? 'Daily Rate' : 'Job offer'}
+                    {'Job offer'}
                   </span>
                   <span className="text-sm text-gray-500">
                     {new Date(job.created_at).toLocaleDateString()}
                   </span>
                 </div>
 
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{job.grad}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{job.vrsta_posla}</h3>
                 
                 <div className="space-y-3 text-gray-600">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
                       <FaMapMarkerAlt className="text-green-600 w-5 h-5" />
                     </div>
-                    <p className="text-gray-700">{job.adresa}</p>
+                    <p className="text-gray-700">{job.grad}</p>
                   </div>
                   
                   <div className="flex items-center gap-3">
@@ -188,7 +189,7 @@ export default function FindJobs() {
                     <p className="text-xl font-semibold text-green-600">
                       {job.dnevnica}€
                       <span className="text-sm text-gray-500 ml-2">
-                        {job.wage_type === 'per day' ? '/day' : '/hour'}
+                        {job.wage_type === 'Per day' ? '/day' : '/hour'}
                       </span>
                     </p>
                   </div>
@@ -224,7 +225,7 @@ export default function FindJobs() {
         className="bg-gradient-to-br from-green-600 to-emerald-500 text-white py-16"
       >
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-6">Can't Find Your Perfect Gig?</h2>
+          <h2 className="text-3xl font-bold mb-6">Can't Find Your Perfect Job?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
             Sign up for job alerts and be the first to know about new opportunities
           </p>

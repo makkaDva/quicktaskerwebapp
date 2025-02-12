@@ -131,6 +131,7 @@ const PostJob = () => {
   const [numberOfWorkingHours, setNumberOfWorkingHours] = useState(8);
   const [numberOfWorkers, setNumberOfWorkers] = useState(1);
   const [jobDescription, setJobDescription] = useState('');
+  const [typeOfWork, setTypeOfWork] = useState('');
 
   useEffect(() => {
     if (location && location.length >= 3) fetchSuggestions(location);
@@ -276,7 +277,7 @@ const PostJob = () => {
       opis: jobDescription,
       dnevnica: parseFloat(wage),
       user_email: user.email,
-      broj_telefona: phoneNumber,
+      broj_telefona: countryCode+phoneNumber,
       broj_radnika: numberOfWorkers,
       latitude: selectedCity?.lat || null,
       longitude: selectedCity?.lng || null,
@@ -284,7 +285,8 @@ const PostJob = () => {
       date_from: dateFrom,
       date_to: dateTo,
       drzava: selectedCity?.country || '',
-      hours_per_day: numberOfWorkingHours
+      hours_per_day: numberOfWorkingHours,
+      vrsta_posla: typeOfWork // Add the new field
     };
 
     const { error } = await supabase.from('jobs').insert(jobData);
@@ -706,21 +708,35 @@ const PostJob = () => {
       </div>
     );
 
-      case 7:
-        
-        return (
-          <div className="w-full max-w-2xl mx-auto flex justify-center items-center h-full">
-            <div className="space-y-2 w-full">
-              <label className="text-gray-600 font-medium"></label>
+    case 7:
+      return (
+        <div className="w-full max-w-2xl mx-auto flex justify-center items-center h-full">
+          <div className="space-y-4 w-full">
+            {/* Type of Work Input */}
+            <div className="space-y-2">
+              <label className="text-gray-600 font-medium">Type of Work</label>
+              <input
+                type="text"
+                value={typeOfWork}
+                onChange={(e) => setTypeOfWork(e.target.value)}
+                placeholder="Type of work (1 or 2 words, e.g., cleaning)"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all"
+              />
+            </div>
+    
+            {/* Job Description Textarea */}
+            <div className="space-y-2">
+              <label className="text-gray-600 font-medium">Description</label>
               <textarea
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
-                placeholder="Describe the job, requirements and any imporant information"
+                placeholder="Describe the job, requirements, and any important information"
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all h-48"
               />
             </div>
           </div>
-        );
+        </div>
+      );
 
       default:
         return null;

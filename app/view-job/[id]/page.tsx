@@ -59,21 +59,29 @@ export default function ViewJob() {
   useEffect(() => {
     const checkIfAdmin = async () => {
       if (!currentUserEmail) return;
-
-      const { data, error } = await supabase
-        .from("admins")
-        .select("email")
-        .eq("email", currentUserEmail)
-        .single();
-
-      if (error) {
-        console.error("Error checking admin status:", error);
-        return;
+  
+      try {
+        // Fetch all emails from the admins table
+        const { data, error } = await supabase
+          .from("admins")
+          .select("email");
+  
+        if (error) {
+          console.error("Error fetching admin emails:", error);
+          setIsAdmin(false); // Ensure admin status is set to false on error
+          return;
+        }
+  
+        // Check if any of the fetched emails match the current user's email
+        const isAdmin = data.some(admin => admin.email === currentUserEmail);
+  
+        setIsAdmin(isAdmin); // Set isAdmin based on the match
+      } catch (err) {
+        console.error("Unexpected error checking admin status:", err);
+        setIsAdmin(false); // Ensure admin status is set to false on unexpected error
       }
-
-      setIsAdmin(!!data); // If data exists, the user is an admin
     };
-
+  
     checkIfAdmin();
   }, [currentUserEmail]);
 
