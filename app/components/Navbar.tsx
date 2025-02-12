@@ -129,7 +129,7 @@ export default function Navbar() {
           <div className="relative w-full">
             <input
               type="text"
-              placeholder="Find your next gig"
+              placeholder="Find your next job"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-6 py-3 pl-12 rounded-full border-2 border-gray-200 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all"
