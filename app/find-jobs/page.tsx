@@ -225,7 +225,7 @@ export default function FindJobs() {
         className="bg-gradient-to-br from-green-600 to-emerald-500 text-white py-16"
       >
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-6">Can't Find Your Perfect Job?</h2>
+          <h2 className="text-3xl font-bold mb-6">Can&apos;t Find Your Perfect Job?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
             Sign up for job alerts and be the first to know about new opportunities
           </p>

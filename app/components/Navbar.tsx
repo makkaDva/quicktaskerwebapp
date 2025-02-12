@@ -46,7 +46,7 @@ export default function Navbar() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           // setUserFullName(user.user_metadata.full_name);
-          // setUserEmail(user.email || '');
+           setUserEmail(user.email || '');
         }
       } catch (error) {
         console.error('Error fetching user:', error);
@@ -74,7 +74,7 @@ export default function Navbar() {
 
   const handleSearchSubmit = () => {
     const queryParams = new URLSearchParams(
-      Object.entries(filters).filter(([_, value]) => value)
+      Object.entries(filters).filter(([ value]) => value)
     ).toString();
     
     if (typeof window !== 'undefined') {

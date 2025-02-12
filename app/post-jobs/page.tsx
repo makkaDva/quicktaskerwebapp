@@ -151,9 +151,7 @@ const PostJob = () => {
         lng: result.geometry.lng,
         country: result.components.country,
       })));
-    } catch (error) {
-      alert('Failed to fetch location suggestions');
-    } finally {
+    }finally {
       setIsLoading(false);
     }
   };
@@ -251,8 +249,8 @@ const PostJob = () => {
       vrsta_posla: typeOfWork // Add the new field
     };
 
-    const { error } = await supabase.from('jobs').insert(jobData);
-    if (error) return alert('Job post failed');
+   // const { error } = await supabase.from('jobs').insert(jobData);
+    //if (error) return alert('Job post failed');
     
     alert('Job posted successfully!');
     resetForm();
@@ -281,9 +279,9 @@ const PostJob = () => {
         try {
           // Use the submitJob function to post the job
           await submitJob(user);
-        } catch (error) {
-          alert('An error occurred while posting the job.');
-        } finally {
+        // } catch (error) {
+        //   alert('An error occurred while posting the job.');
+         } finally {
           isSubmitting.current = false;
         }
       }
@@ -296,7 +294,7 @@ const PostJob = () => {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [submitJob]); // Empty dependency array ensures this runs only onc
+  }, []); // Empty dependency array ensures this runs only onc
 
   const resetForm = () => {
     setStep(1);

@@ -92,7 +92,7 @@ export default function MyJobApplicationsPage() {
               </span>
             </motion.h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto text-center">
-              Here are the jobs you've applied for.
+              Here are the jobs you&apos;ve applied for.
             </p>
           </div>
 
@@ -146,7 +146,7 @@ export default function MyJobApplicationsPage() {
                 </motion.div>
               ))
             ) : (
-              <p className="text-gray-600 text-center">You haven't applied for any jobs yet.</p>
+              <p className="text-gray-600 text-center">You haven&apos;t applied for any jobs yet.</p>
             )}
           </motion.div>
         </motion.div>

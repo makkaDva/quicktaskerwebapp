@@ -142,7 +142,7 @@ const ProfilePage: React.FC = () => {
       ))}
       {jobs.length === 0 && (
         <div className={`text-center p-8 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>You haven't posted any jobs yet</p>
+          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>You haven&apos;t posted any jobs yet</p>
         </div>
       )}
     </div>
@@ -199,7 +199,7 @@ const ProfilePage: React.FC = () => {
       ))}
       {applications.length === 0 && (
         <div className={`text-center p-8 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>You haven't applied to any jobs yet</p>
+          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>You haven&apos;t applied to any jobs yet</p>
         </div>
       )}
     </div>
