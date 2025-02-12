@@ -1,9 +1,9 @@
 "use client";
-import { useState, FormEvent, useRef } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import supabase from "../../lib/supabase";
 import { FaGoogle } from "react-icons/fa";
-import Router from 'next/router';
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');

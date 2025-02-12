@@ -232,6 +232,34 @@ const PostJob = () => {
 
   const isSubmitting = useRef(false);
 
+  const submitJob = async (user: any) => {
+    const jobData = {
+      grad: selectedCity?.city || '',
+      adresa: location,
+      opis: jobDescription,
+      dnevnica: parseFloat(wage),
+      user_email: user.email,
+      broj_telefona: countryCode+phoneNumber,
+      broj_radnika: numberOfWorkers,
+      latitude: selectedCity?.lat || null,
+      longitude: selectedCity?.lng || null,
+      wage_type: wageType,
+      date_from: dateFrom,
+      date_to: dateTo,
+      drzava: selectedCity?.country || '',
+      hours_per_day: numberOfWorkingHours,
+      vrsta_posla: typeOfWork // Add the new field
+    };
+
+    const { error } = await supabase.from('jobs').insert(jobData);
+    if (error) return alert('Job post failed');
+    
+    alert('Job posted successfully!');
+    resetForm();
+    router.push('/find-jobs');
+    //window.location.reload();
+  };
+
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
       console.log('Message received:', event.data); // Debugging line
@@ -268,35 +296,7 @@ const PostJob = () => {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, []); // Empty dependency array ensures this runs only onc
-
-  const submitJob = async (user: any) => {
-    const jobData = {
-      grad: selectedCity?.city || '',
-      adresa: location,
-      opis: jobDescription,
-      dnevnica: parseFloat(wage),
-      user_email: user.email,
-      broj_telefona: countryCode+phoneNumber,
-      broj_radnika: numberOfWorkers,
-      latitude: selectedCity?.lat || null,
-      longitude: selectedCity?.lng || null,
-      wage_type: wageType,
-      date_from: dateFrom,
-      date_to: dateTo,
-      drzava: selectedCity?.country || '',
-      hours_per_day: numberOfWorkingHours,
-      vrsta_posla: typeOfWork // Add the new field
-    };
-
-    const { error } = await supabase.from('jobs').insert(jobData);
-    if (error) return alert('Job post failed');
-    
-    alert('Job posted successfully!');
-    resetForm();
-    router.push('/find-jobs');
-    //window.location.reload();
-  };
+  }, [submitJob]); // Empty dependency array ensures this runs only onc
 
   const resetForm = () => {
     setStep(1);

@@ -30,7 +30,7 @@ export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [userEmail, setUserEmail] = useState('');
-  const [userFullName, setUserFullName] = useState('');
+ // const [userFullName, setUserFullName] = useState('');
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -45,8 +45,8 @@ export default function Navbar() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          setUserFullName(user.user_metadata.full_name);
-          setUserEmail(user.email || '');
+          // setUserFullName(user.user_metadata.full_name);
+          // setUserEmail(user.email || '');
         }
       } catch (error) {
         console.error('Error fetching user:', error);

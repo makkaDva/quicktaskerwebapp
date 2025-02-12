@@ -29,7 +29,7 @@ interface Job {
 export default function MyJobApplicationsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserDisplayName, setCurrentUserDisplayName] = useState<string | null>(null);
+ //const [currentUserDisplayName, setCurrentUserDisplayName] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function MyJobApplicationsPage() {
         }
 
         const displayName = user.user_metadata?.name || null;
-        setCurrentUserDisplayName(displayName);
+        //setCurrentUserDisplayName(displayName);
 
         // Fetch all jobs where the user is an applicant
         const { data: jobsData, error } = await supabase

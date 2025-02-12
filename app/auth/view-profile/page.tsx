@@ -2,8 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Edit, ShieldCheck, Star, Briefcase, Clock, Globe, QrCode,
-  Download, Lock, Bell, Palette, UserCheck2, Calendar, Settings,
+  Edit, ShieldCheck, Star, Briefcase, Lock, Palette, UserCheck2, Calendar, Settings,
   ClipboardList, FileText, Bookmark
 } from 'lucide-react';
 import Image from "next/image";

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useState, useEffect, ReactNode } from 'react';
 import supabase from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FaMapMarkerAlt, FaCalendarAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
 import { Spinner } from '@/components/ui/spinner';
 
 interface Job {
@@ -41,7 +41,7 @@ export default function FindJobs() {
   const wageTo = parseFloat(searchParams.get('wageTo') || 'Infinity');
   const dateFrom = searchParams.get('dateFrom') || '';
   const dateTo = searchParams.get('dateTo') || '';
-  const vrsta_posla = searchParams.get('vrsta_posla');
+  //const vrsta_posla = searchParams.get('vrsta_posla');
   // Sorting and filtering logic
   const sortedJobs = [...jobs].sort((a, b) => {
     const dateA = new Date(a.created_at).getTime();

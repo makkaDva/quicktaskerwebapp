@@ -259,7 +259,7 @@ export default function ViewJob() {
     if (!job || !currentUserEmail) return;
 
     // Check if the user is an admin
-    const { data: adminData, error: adminError } = await supabase
+    const { data: adminData } = await supabase
       .from("admins")
       .select("email")
       .eq("email", currentUserEmail)

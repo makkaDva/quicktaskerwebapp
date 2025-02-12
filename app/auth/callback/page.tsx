@@ -14,7 +14,7 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     let messageSent = false;
   
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === "SIGNED_IN" && !messageSent) {
         // Handle popup flow
         if (window.opener) {
