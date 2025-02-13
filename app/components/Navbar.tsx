@@ -30,7 +30,6 @@ export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [userEmail, setUserEmail] = useState('');
- // const [userFullName, setUserFullName] = useState('');
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -45,8 +44,7 @@ export default function Navbar() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          // setUserFullName(user.user_metadata.full_name);
-           setUserEmail(user.email || '');
+          setUserEmail(user.email || '');
         }
       } catch (error) {
         console.error('Error fetching user:', error);
@@ -74,7 +72,7 @@ export default function Navbar() {
 
   const handleSearchSubmit = () => {
     const queryParams = new URLSearchParams(
-      Object.entries(filters).filter(([ value]) => value)
+      Object.entries(filters).filter(([_, value]) => value)
     ).toString();
     
     if (typeof window !== 'undefined') {
@@ -84,6 +82,12 @@ export default function Navbar() {
 
   const updateFilter = (field: keyof SearchFilters, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSearchQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    updateFilter('city', value); // Update the city filter when search query changes
   };
 
   const handleSignOut = async () => {
@@ -131,7 +135,7 @@ export default function Navbar() {
               type="text"
               placeholder="Find your next job"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchQueryChange} // Use the new handler
               className="w-full px-6 py-3 pl-12 rounded-full border-2 border-gray-200 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-all"
             />
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center">
@@ -154,7 +158,7 @@ export default function Navbar() {
                   <input
                     type="text"
                     value={filters.city}
-                    onChange={(e) => updateFilter('city', e.target.value)}
+                    onChange={(e) => updateFilter('city', e.target.value)} // Only update the city filter
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   />
                 </div>
@@ -224,18 +228,17 @@ export default function Navbar() {
 
       {/* Action Buttons */}
       <div className="flex items-center gap-4">
-                <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => {
-                router.push('/post-jobs');
-            }}
-            className="bg-gradient-to-br from-green-600 to-emerald-500 text-white px-6 py-2.5 rounded-full text-md font-semibold flex items-center gap-2 shadow-lg hover:shadow-emerald-100"
-          >
-            <PlusCircle className="w-5 h-5" />
-            Post Job
-          </motion.button>
-
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => {
+            router.push('/post-jobs');
+          }}
+          className="bg-gradient-to-br from-green-600 to-emerald-500 text-white px-6 py-2.5 rounded-full text-md font-semibold flex items-center gap-2 shadow-lg hover:shadow-emerald-100"
+        >
+          <PlusCircle className="w-5 h-5" />
+          Post Job
+        </motion.button>
 
         {/* Profile Section */}
         <div className="relative ml-4" ref={profileRef}>
@@ -280,7 +283,7 @@ export default function Navbar() {
                       onClick={() => router.push('/auth/my-jobs')}
                       className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                     >
-                      <Briefcase className="w-4 h-4" /> {/* You can use an appropriate icon */}
+                      <Briefcase className="w-4 h-4" />
                       My Jobs
                     </motion.button>
                     <motion.button
@@ -288,7 +291,7 @@ export default function Navbar() {
                       onClick={() => router.push('/auth/my-job-applications')}
                       className="w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                     >
-                      <FileText className="w-4 h-4" /> {/* Use an appropriate icon */}
+                      <FileText className="w-4 h-4" />
                       My Job Applications
                     </motion.button>
                     <motion.button

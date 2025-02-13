@@ -235,8 +235,10 @@ const PostJob = () => {
   
 
   const submitJob = useCallback(async (user: User) => {
+    const cityName = selectedCity?.city?.toLowerCase() === 'belgrade' ? 'Beograd' : selectedCity?.city || '';
+
     const jobData = {
-      grad: selectedCity?.city || '',
+      grad: cityName,
       adresa: location,
       opis: jobDescription,
       dnevnica: parseFloat(wage),
