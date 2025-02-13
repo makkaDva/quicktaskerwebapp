@@ -254,7 +254,12 @@ const PostJob = () => {
     };
   
     const { error } = await supabase.from('jobs').insert(jobData);
-    if (error) return alert('Job post failed');
+    
+    if (error) {
+      console.error('Error posting job:', error);
+      alert('Job post failed. Please try again.');
+      return;
+    }
   
     alert('Job posted successfully!');
     resetForm();
