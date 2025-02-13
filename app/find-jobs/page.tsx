@@ -1,4 +1,5 @@
 'use client';
+import { Suspense } from "react";
 import { motion } from 'framer-motion';
 import { useState, useEffect, ReactNode } from 'react';
 import supabase from '@/lib/supabase';
@@ -104,6 +105,8 @@ export default function FindJobs() {
   }
 
   return (
+    <Suspense fallback={<div className="min-h-screen flex justify-center items-center"><Spinner /></div>}>
+      
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       <section className="container mx-auto px-4 sm:px-6 py-16">
         <motion.div
@@ -240,5 +243,6 @@ export default function FindJobs() {
         </div>
       </motion.section>
     </div>
+    </Suspense>
   );
 }
