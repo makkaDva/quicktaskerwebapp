@@ -29,7 +29,7 @@ interface Job {
 export default function MyJobApplicationsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserDisplayName, setCurrentUserDisplayName] = useState<string | null>(null);
+ //const [currentUserDisplayName, setCurrentUserDisplayName] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function MyJobApplicationsPage() {
         }
 
         const displayName = user.user_metadata?.name || null;
-        setCurrentUserDisplayName(displayName);
+        //setCurrentUserDisplayName(displayName);
 
         // Fetch all jobs where the user is an applicant
         const { data: jobsData, error } = await supabase
@@ -92,7 +92,7 @@ export default function MyJobApplicationsPage() {
               </span>
             </motion.h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto text-center">
-              Here are the jobs you've applied for.
+              Here are the jobs you&apos;ve applied for.
             </p>
           </div>
 
@@ -146,7 +146,7 @@ export default function MyJobApplicationsPage() {
                 </motion.div>
               ))
             ) : (
-              <p className="text-gray-600 text-center">You haven't applied for any jobs yet.</p>
+              <p className="text-gray-600 text-center">You haven&apos;t applied for any jobs yet.</p>
             )}
           </motion.div>
         </motion.div>

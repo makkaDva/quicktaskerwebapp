@@ -1,9 +1,10 @@
 'use client';
+import { Suspense } from "react";
 import { motion } from 'framer-motion';
 import { useState, useEffect, ReactNode } from 'react';
 import supabase from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FaMapMarkerAlt, FaCalendarAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
 import { Spinner } from '@/components/ui/spinner';
 
 interface Job {
@@ -41,7 +42,7 @@ export default function FindJobs() {
   const wageTo = parseFloat(searchParams.get('wageTo') || 'Infinity');
   const dateFrom = searchParams.get('dateFrom') || '';
   const dateTo = searchParams.get('dateTo') || '';
-  const vrsta_posla = searchParams.get('vrsta_posla');
+  //const vrsta_posla = searchParams.get('vrsta_posla');
   // Sorting and filtering logic
   const sortedJobs = [...jobs].sort((a, b) => {
     const dateA = new Date(a.created_at).getTime();
@@ -104,6 +105,8 @@ export default function FindJobs() {
   }
 
   return (
+    <Suspense fallback={<div className="min-h-screen flex justify-center items-center"><Spinner /></div>}>
+      
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       <section className="container mx-auto px-4 sm:px-6 py-16">
         <motion.div
@@ -225,7 +228,7 @@ export default function FindJobs() {
         className="bg-gradient-to-br from-green-600 to-emerald-500 text-white py-16"
       >
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-6">Can't Find Your Perfect Job?</h2>
+          <h2 className="text-3xl font-bold mb-6">Can&apos;t Find Your Perfect Job?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
             Sign up for job alerts and be the first to know about new opportunities
           </p>
@@ -240,5 +243,6 @@ export default function FindJobs() {
         </div>
       </motion.section>
     </div>
+    </Suspense>
   );
 }

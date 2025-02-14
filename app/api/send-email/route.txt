@@ -1,0 +1,84 @@
+export const dummy = () => {};
+// import { NextResponse } from 'next/server';
+// import formidable from 'formidable'
+// import Brevo, { SendSmtpEmail } from '@getbrevo/brevo';
+// import { Readable } from 'stream'; // Import Readable to convert Request body to a stream
+// import { IncomingMessage } from 'http'; // Import IncomingMessage type
+
+// const { TransactionalEmailsApi } = Brevo;
+
+// // Initialize Brevo client
+// const brevoApiKey = process.env.NEXT_PUBLIC_BREVO_API_KEY || '';
+// const brevoClient = new TransactionalEmailsApi();
+// brevoClient.setApiKey(0, brevoApiKey); // Set the API key
+
+// export const config = {
+//   api: {
+//     bodyParser: false, // Disable the default Next.js body parser to use formidable
+//   },
+// };
+
+// // Helper function to convert Request to IncomingMessage
+// function createIncomingMessage(request: Request): IncomingMessage {
+//   const incomingMessage = new Readable({
+//     read() {
+//       this.push(request.body);
+//       this.push(null); // Signal end of stream
+//     },
+//   }) as unknown as IncomingMessage;
+
+//   // Add required properties to mimic IncomingMessage
+//   incomingMessage.headers = Object.fromEntries(request.headers.entries());
+//   incomingMessage.method = request.method;
+//   incomingMessage.url = request.url;
+
+//   return incomingMessage;
+// }
+
+// export async function POST(request: Request) {
+//   try {
+//     // Convert the Fetch API Request to an IncomingMessage
+//     const incomingMessage = createIncomingMessage(request);
+
+//     // Parse the incoming form data using formidable
+//     const form = new formidable.IncomingForm();
+
+//     const formData: { fields: formidable.Fields; files: formidable.Files } = await new Promise((resolve, reject) => {
+//       form.parse(incomingMessage, (err, fields, files) => {
+//         if (err) {
+//           reject(err);
+//           return;
+//         }
+//         resolve({ fields, files });
+//       });
+//     });
+
+//     // Extract fields from the parsed form data
+//     const applicantName = formData.fields.applicantName?.[0] || ''; // Extract first element or default to empty string
+//     const applicantEmail = formData.fields.applicantEmail?.[0] || ''; // Extract first element or default to empty string
+//     const jobPosterEmail = formData.fields.jobPosterEmail?.[0] || ''; // Extract first element or default to empty string
+//     const jobDescription = formData.fields.jobDescription?.[0] || ''; // Extract first element or default to empty string
+//     const jobCity = formData.fields.jobCity?.[0] || ''; // Extract first element or default to empty string
+
+//     // Create the email object
+//     const sendSmtpEmail: SendSmtpEmail = {
+//       sender: { email: 'markoandrijevic72@gmail.com', name: 'Kviky Team' }, // Replace with a verified sender
+//       to: [{ email: jobPosterEmail }], // Send to the job poster
+//       subject: 'Someone applied for your job!',
+//       htmlContent: `
+//         <p>Hello,</p>
+//         <p>${applicantName} has applied for your job: "${jobDescription}" in ${jobCity}.</p>
+//         <p>Contact them at: ${applicantEmail}</p>
+//         <p>Regards,<br/>Kviky Team</p>
+//       `,
+//     };
+
+//     // Send the email using Brevo
+//     const data = await brevoClient.sendTransacEmail(sendSmtpEmail);
+
+//     return NextResponse.json({ data });
+//   } catch (error) {
+//     console.error('Error sending email:', error);
+//     return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
+//   }
+// }

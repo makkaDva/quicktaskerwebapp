@@ -1,0 +1,15 @@
+name: Delete Expired Jobs
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # Runs every day at midnight UTC
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Supabase Function
+        run: |
+          curl -X POST "https://kskzbqsckhhlxhwgrevr.functions.supabase.co/delete-expired-jobs" \
+               -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+               -H "Content-Type: application/json"

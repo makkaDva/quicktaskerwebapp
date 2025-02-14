@@ -2,8 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Edit, ShieldCheck, Star, Briefcase, Clock, Globe, QrCode,
-  Download, Lock, Bell, Palette, UserCheck2, Calendar, Settings,
+  Edit, ShieldCheck, Star, Briefcase, Lock, Palette, UserCheck2, Calendar, Settings,
   ClipboardList, FileText, Bookmark
 } from 'lucide-react';
 import Image from "next/image";
@@ -22,9 +21,20 @@ interface Job {
   applicants?: string[];
 }
 
+interface UserData {
+  id: string;
+  email?: string;
+  avatar_url?: string;
+  firstName: string;
+  lastName: string;
+  user_metadata?: {
+    name?: string;
+  };
+}
+
 const ProfilePage: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<UserData | null>(null); // Fixed type
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -143,7 +153,7 @@ const ProfilePage: React.FC = () => {
       ))}
       {jobs.length === 0 && (
         <div className={`text-center p-8 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>You haven't posted any jobs yet</p>
+          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>You haven&apos;t posted any jobs yet</p>
         </div>
       )}
     </div>
@@ -200,7 +210,7 @@ const ProfilePage: React.FC = () => {
       ))}
       {applications.length === 0 && (
         <div className={`text-center p-8 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>You haven't applied to any jobs yet</p>
+          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>You haven&apos;t applied to any jobs yet</p>
         </div>
       )}
     </div>
