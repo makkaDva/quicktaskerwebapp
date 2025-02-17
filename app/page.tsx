@@ -74,7 +74,7 @@ export default function HomeClient() {
             className="text-4xl sm:text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight"
           >
             <span className="bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
-              Find Local Gigs
+              Find Local Jobs
             </span>
             <br />
             <span className="text-2xl sm:text-3xl md:text-4xl font-medium text-gray-600 mt-2 sm:mt-4 block">

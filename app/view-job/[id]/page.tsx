@@ -33,6 +33,7 @@ interface Job {
   date_to: string;
   hours_per_day: number;
   applicants?: string[];
+  accepted_applicants?: string[];
 }
 
 interface AdminData {
@@ -130,17 +131,77 @@ export default function ViewJob() {
 
   const handleBackToList = () => router.push('/find-jobs');
 
+  const handleRemoveAcceptedApplicant = async (index: number) => {
+    if (!job || !job.accepted_applicants || job.accepted_applicants.length <= index) return;
+    try {
+      const updatedAcceptedApplicants = job.accepted_applicants.filter((_, i) => i !== index);
+      const updatedBrojRadnika = job.broj_radnika + 1;
+  
+      const { error } = await supabase
+        .from('jobs')
+        .update({
+          accepted_applicants: updatedAcceptedApplicants,
+          broj_radnika: updatedBrojRadnika,
+        })
+        .eq('id', job.id);
+  
+      if (error) {
+        console.error("Supabase error details:", error);
+        alert(`Error: ${error.message}`);
+        return;
+      }
+  
+      setJob(prev => prev ? {
+        ...prev,
+        accepted_applicants: updatedAcceptedApplicants,
+        broj_radnika: updatedBrojRadnika,
+      } : null);
+  
+      alert('Accepted applicant removed successfully!');
+    } catch (error) {
+      console.error('Error removing accepted applicant:', error);
+      alert('Failed to remove accepted applicant. Please try again.');
+    }
+  };
+
   const handleAcceptApplicant = async (index: number) => {
     if (!job || !job.applicants || job.applicants.length <= index) return;
     try {
+      const applicantName = job.applicants[index];
       const updatedBrojRadnika = job.broj_radnika - 1;
       const updatedApplicants = job.applicants.filter((_, i) => i !== index);
+      const updatedAcceptedApplicants = Array.isArray(job.accepted_applicants)
+        ? [...job.accepted_applicants, applicantName]
+        : [applicantName];
+  
+      console.log("Updating job with:", {
+        broj_radnika: updatedBrojRadnika,
+        applicants: updatedApplicants,
+        accepted_applicants: updatedAcceptedApplicants
+      });
+  
       const { error } = await supabase
         .from('jobs')
-        .update({ broj_radnika: updatedBrojRadnika, applicants: updatedApplicants })
+        .update({
+          broj_radnika: updatedBrojRadnika,
+          applicants: updatedApplicants,
+          accepted_applicants: updatedAcceptedApplicants
+        })
         .eq('id', job.id);
-      if (error) throw error;
-      setJob(prev => prev ? { ...prev, broj_radnika: updatedBrojRadnika, applicants: updatedApplicants } : null);
+  
+      if (error) {
+        console.error("Supabase error details:", error);
+        alert(`Error: ${error.message}`);
+        return;
+      }
+  
+      setJob(prev => prev ? {
+        ...prev,
+        broj_radnika: updatedBrojRadnika,
+        applicants: updatedApplicants,
+        accepted_applicants: updatedAcceptedApplicants
+      } : null);
+  
       alert('Applicant accepted successfully!');
     } catch (error) {
       console.error('Error accepting applicant:', error);
@@ -189,10 +250,10 @@ export default function ViewJob() {
       }
       const { error } = await supabase
         .from('jobs')
-        .update({ broj_radnika: job.broj_radnika - 1, applicants: [...(job.applicants || []), applicantName] })
+        .update({ applicants: [...(job.applicants || []), applicantName] })
         .eq('id', job.id);
       if (error) throw error;
-      setJob(prev => prev ? { ...prev, broj_radnika: prev.broj_radnika - 1, applicants: [...(prev.applicants || []), applicantName] } : null);
+      setJob(prev => prev ? { ...prev, applicants: [...(prev.applicants || []), applicantName] } : null);
       alert('Application successful! The job poster has been notified.');
     } catch (error: unknown) {
       console.error('Application failed:', error);
@@ -413,6 +474,42 @@ export default function ViewJob() {
     ) : (
       <p className="text-gray-600">No applicants yet.</p>
     )}
+
+<h3 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Accepted Applicants</h3>
+{job.accepted_applicants && job.accepted_applicants.length > 0 ? (
+  <div className="overflow-x-auto">
+    <table className="min-w-full bg-white rounded-lg shadow-lg border border-green-600 overflow-hidden">
+      <thead className="bg-green-600 rounded-t-lg">
+        <tr>
+          <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Name</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Accepted On</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-gray-200">
+        {job.accepted_applicants.map((applicant, index) => (
+          <tr key={index} className="hover:bg-green-50 transition-colors">
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{applicant}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{new Date().toLocaleDateString()}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleRemoveAcceptedApplicant(index)}
+                  className="p-1.5 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+                  title="Remove"
+                >
+                  <span role="img" aria-label="Remove">🗑️</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+) : (
+  <p className="text-gray-600">No accepted applicants yet.</p>
+)}
   </motion.div>
 )}
 

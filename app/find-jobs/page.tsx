@@ -8,13 +8,14 @@ import { FaMapMarkerAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
 import { Spinner } from '@/components/ui/spinner';
 
 interface Job {
-  vrsta_posla: ReactNode;
   id: string;
   grad: string;
   adresa: string;
   dnevnica: number;
   wage_type: string;
   created_at: string;
+  vrsta_posla: ReactNode;
+  broj_radnika: number; // Add this line
 }
 
 const fadeInUp = {
@@ -73,7 +74,7 @@ export default function FindJobs() {
       try {
         const { data, error } = await supabase
           .from('jobs')
-          .select('id, grad, adresa, dnevnica, wage_type, created_at, vrsta_posla');
+          .select('id, grad, adresa, dnevnica, wage_type, created_at, vrsta_posla, broj_radnika');
 
         if (error) throw error;
         setJobs(data?.filter((job) => job.id) || []);
@@ -158,47 +159,58 @@ export default function FindJobs() {
             animate="visible"
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
-            {filteredJobs.map((job) => (
-              <motion.div
-                key={job.id}
-                variants={fadeInUp}
-                whileHover={{ scale: 1.02 }}
-                className="p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-100 cursor-pointer"
-                onClick={() => router.push(`/view-job/${job.id}`)}
-              >
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
-                    {'Job offer'}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    {new Date(job.created_at).toLocaleDateString()}
-                  </span>
-                </div>
+            {filteredJobs.map((job) => {
+  const isFilled = job.broj_radnika === 0;
 
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{job.vrsta_posla}</h3>
-                
-                <div className="space-y-3 text-gray-600">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                      <FaMapMarkerAlt className="text-green-600 w-5 h-5" />
-                    </div>
-                    <p className="text-gray-700">{job.grad}</p>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                      <FaEuroSign className="text-green-600 w-5 h-5" />
-                    </div>
-                    <p className="text-xl font-semibold text-green-600">
-                      {job.dnevnica}€
-                      <span className="text-sm text-gray-500 ml-2">
-                        {job.wage_type === 'Per day' ? '/day' : '/hour'}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+  return (
+    <motion.div
+      key={job.id}
+      variants={fadeInUp}
+      whileHover={{ scale: isFilled ? 1 : 1.02 }} // Slightly scale only unoccupied jobs
+      className={`p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-100 cursor-pointer relative ${
+        isFilled ? 'opacity-50' : ''
+      }`}
+      onClick={() => router.push(`/view-job/${job.id}`)} // Always allow click and redirect
+    >
+      {isFilled && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-200/50 rounded-2xl">
+          <span className="text-xl font-bold text-gray-700">Popunjeno</span>
+        </div>
+      )}
+      <div className="mb-4 flex items-center justify-between">
+        <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
+          {'Job offer'}
+        </span>
+        <span className="text-sm text-gray-500">
+          {new Date(job.created_at).toLocaleDateString()}
+        </span>
+      </div>
+
+      <h3 className="text-2xl font-bold text-gray-900 mb-2">{job.vrsta_posla}</h3>
+      
+      <div className="space-y-3 text-gray-600">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+            <FaMapMarkerAlt className="text-green-600 w-5 h-5" />
+          </div>
+          <p className="text-gray-700">{job.grad}</p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+            <FaEuroSign className="text-green-600 w-5 h-5" />
+          </div>
+          <p className="text-xl font-semibold text-green-600">
+            {job.dnevnica}€
+            <span className="text-sm text-gray-500 ml-2">
+              {job.wage_type === 'Per day' ? '/day' : '/hour'}
+            </span>
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+})}
           </motion.div>
 
           {/* Empty State */}
