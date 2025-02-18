@@ -451,7 +451,7 @@ const StatCard = ({ icon, title, value, darkMode }: {
   value: string | number;
   darkMode: boolean;
 }) => (
-  <div className={`flex items-center gap-4 p-4 rounded-xl shadow-sm hover:shadow-md transition-all ${
+  <div className={`flex items-center gap-4 p-4 rounded-xl shadow-sm hover:shadow-md ${
     darkMode ? 'bg-gray-800 text-white' : 'bg-white'
   }`}>
     <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-green-100'}`}>
