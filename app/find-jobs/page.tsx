@@ -1,20 +1,19 @@
 'use client';
-import { Suspense } from "react";
 import { motion } from 'framer-motion';
 import { useState, useEffect, ReactNode } from 'react';
 import supabase from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FaMapMarkerAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaCalendarAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
 import { Spinner } from '@/components/ui/spinner';
 
 interface Job {
+  vrsta_posla: ReactNode;
   id: string;
   grad: string;
   adresa: string;
   dnevnica: number;
   wage_type: string;
   created_at: string;
-  vrsta_posla: ReactNode;
   broj_radnika: number; // Add this line
 }
 
@@ -43,7 +42,8 @@ export default function FindJobs() {
   const wageTo = parseFloat(searchParams.get('wageTo') || 'Infinity');
   const dateFrom = searchParams.get('dateFrom') || '';
   const dateTo = searchParams.get('dateTo') || '';
-  //const vrsta_posla = searchParams.get('vrsta_posla');
+  const vrsta_posla = searchParams.get('vrsta_posla');
+
   // Sorting and filtering logic
   const sortedJobs = [...jobs].sort((a, b) => {
     const dateA = new Date(a.created_at).getTime();
@@ -54,18 +54,11 @@ export default function FindJobs() {
   const filteredJobs = sortedJobs.filter((job) => {
     const jobDate = new Date(job.created_at).toISOString().split('T')[0];
     const matchesCity = city ? job.grad.toLowerCase().includes(city.toLowerCase()) : true;
-    
-    // Debugging logs
-    console.log("Filter Wage Type:", wageType);
-    console.log("Job Wage Type:", job.wage_type);
-  
-    // Fix: Only apply wageType filter if wageType is provided
     const matchesWageType = wageType ? job.wage_type.toLowerCase() === wageType.toLowerCase() : true;
-    
     const matchesWageRange = job.dnevnica >= wageFrom && job.dnevnica <= wageTo;
     const matchesDateRange =
       (!dateFrom || jobDate >= dateFrom) && (!dateTo || jobDate <= dateTo);
-  
+
     return matchesCity && matchesWageType && matchesWageRange && matchesDateRange;
   });
 
@@ -74,7 +67,7 @@ export default function FindJobs() {
       try {
         const { data, error } = await supabase
           .from('jobs')
-          .select('id, grad, adresa, dnevnica, wage_type, created_at, vrsta_posla, broj_radnika');
+          .select('id, grad, adresa, dnevnica, wage_type, created_at, vrsta_posla, broj_radnika'); // Add broj_radnika here
 
         if (error) throw error;
         setJobs(data?.filter((job) => job.id) || []);
@@ -106,8 +99,6 @@ export default function FindJobs() {
   }
 
   return (
-    <Suspense fallback={<div className="min-h-screen flex justify-center items-center"><Spinner /></div>}>
-      
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       <section className="container mx-auto px-4 sm:px-6 py-16">
         <motion.div
@@ -159,58 +150,52 @@ export default function FindJobs() {
             animate="visible"
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
-            {filteredJobs.map((job) => {
-  const isFilled = job.broj_radnika === 0;
+            {filteredJobs.map((job) => (
+              <motion.div
+                key={job.id}
+                variants={fadeInUp}
+                whileHover={{ scale: job.broj_radnika > 0 ? 1.02 : 1 }}
+                className={`p-6 ${job.broj_radnika === 0 ? 'bg-gray-200' : 'bg-white/90'} backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-100 cursor-pointer`}
+                onClick={() => job.broj_radnika > 0 && router.push(`/view-job/${job.id}`)}
+              >
+                {job.broj_radnika === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-200/90 rounded-2xl">
+                    <span className="text-2xl font-bold text-gray-600 -rotate-45">Popunjeno</span>
+                  </div>
+                )}
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
+                    {'Job offer'}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    {new Date(job.created_at).toLocaleDateString()}
+                  </span>
+                </div>
 
-  return (
-    <motion.div
-      key={job.id}
-      variants={fadeInUp}
-      whileHover={{ scale: isFilled ? 1 : 1.02 }} // Slightly scale only unoccupied jobs
-      className={`p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-100 cursor-pointer relative ${
-        isFilled ? 'opacity-50' : ''
-      }`}
-      onClick={() => router.push(`/view-job/${job.id}`)} // Always allow click and redirect
-    >
-      {isFilled && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-200/50 rounded-2xl">
-          <span className="text-xl font-bold text-gray-700">Popunjeno</span>
-        </div>
-      )}
-      <div className="mb-4 flex items-center justify-between">
-        <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
-          {'Job offer'}
-        </span>
-        <span className="text-sm text-gray-500">
-          {new Date(job.created_at).toLocaleDateString()}
-        </span>
-      </div>
-
-      <h3 className="text-2xl font-bold text-gray-900 mb-2">{job.vrsta_posla}</h3>
-      
-      <div className="space-y-3 text-gray-600">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-            <FaMapMarkerAlt className="text-green-600 w-5 h-5" />
-          </div>
-          <p className="text-gray-700">{job.grad}</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-            <FaEuroSign className="text-green-600 w-5 h-5" />
-          </div>
-          <p className="text-xl font-semibold text-green-600">
-            {job.dnevnica}€
-            <span className="text-sm text-gray-500 ml-2">
-              {job.wage_type === 'Per day' ? '/day' : '/hour'}
-            </span>
-          </p>
-        </div>
-      </div>
-    </motion.div>
-  );
-})}
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{job.vrsta_posla}</h3>
+                
+                <div className="space-y-3 text-gray-600">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                      <FaMapMarkerAlt className="text-green-600 w-5 h-5" />
+                    </div>
+                    <p className="text-gray-700">{job.grad}</p>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                      <FaEuroSign className="text-green-600 w-5 h-5" />
+                    </div>
+                    <p className="text-xl font-semibold text-green-600">
+                      {job.dnevnica}€
+                      <span className="text-sm text-gray-500 ml-2">
+                        {job.wage_type === 'Per day' ? '/day' : '/hour'}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </motion.div>
 
           {/* Empty State */}
@@ -240,7 +225,7 @@ export default function FindJobs() {
         className="bg-gradient-to-br from-green-600 to-emerald-500 text-white py-16"
       >
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-6">Can&apos;t Find Your Perfect Job?</h2>
+          <h2 className="text-3xl font-bold mb-6">Can't Find Your Perfect Job?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
             Sign up for job alerts and be the first to know about new opportunities
           </p>
@@ -255,6 +240,5 @@ export default function FindJobs() {
         </div>
       </motion.section>
     </div>
-    </Suspense>
   );
 }
