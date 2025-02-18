@@ -5,6 +5,7 @@ import supabase from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaMapMarkerAlt, FaCalendarAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
 import { Spinner } from '@/components/ui/spinner';
+import { Suspense } from 'react';
 
 interface Job {
   vrsta_posla: ReactNode;
@@ -99,6 +100,7 @@ export default function FindJobs() {
   }
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       <section className="container mx-auto px-4 sm:px-6 py-16">
         <motion.div
@@ -240,5 +242,6 @@ export default function FindJobs() {
         </div>
       </motion.section>
     </div>
+    </Suspense>
   );
 }
