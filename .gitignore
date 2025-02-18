@@ -41,3 +41,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .next/
+public/Docker Desktop Installer.exe
