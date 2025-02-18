@@ -1,8 +1,8 @@
 "use client";
 
+import React, { useRef, useMemo } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { Star, Hammer, Sprout, UtensilsCrossed, UserCheck, ShieldCheck, Zap, BadgeDollarSign } from 'lucide-react';
-import { useRef } from 'react';
 
 const staggerVariants = {
   hidden: { opacity: 0 },
@@ -14,12 +14,10 @@ const fadeInUp = {
   visible: { opacity: 1, y: 0 },
 };
 
-const JobCategory = ({
-  icon,
-  title,
-}: {
-  icon: React.ReactNode;
-  title: string;
+// Memoize JobCategory to avoid unnecessary re-renders
+const JobCategory = React.memo(({ icon, title }: { 
+  icon: React.ReactNode; 
+  title: string; 
 }) => (
   <motion.div
     variants={fadeInUp}
@@ -33,12 +31,13 @@ const JobCategory = ({
       {title}
     </h3>
   </motion.div>
-);
+));
 
-const FeatureCard = ({ icon, title, description }: { 
-  icon: React.ReactNode;
-  title: string;
-  description: string;
+// Memoize FeatureCard to avoid unnecessary re-renders
+const FeatureCard = React.memo(({ icon, title, description }: { 
+  icon: React.ReactNode; 
+  title: string; 
+  description: string; 
 }) => (
   <motion.div 
     variants={fadeInUp}
@@ -51,17 +50,25 @@ const FeatureCard = ({ icon, title, description }: {
     <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-4">{title}</h3>
     <p className="text-gray-600 leading-relaxed text-base sm:text-lg">{description}</p>
   </motion.div>
-);
+));
 
 export default function HomeClient() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
+  // Memoize the static stats array to avoid recreating it on every render
+  const stats = useMemo(() => [
+    { value: '100+', label: 'Daily Gigs Posted', icon: <BadgeDollarSign className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-600" /> },
+    { value: '4.8', label: 'Average Rating', icon: <Star className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-600" /> },
+    { value: '99%', label: 'Verified Workers', icon: <ShieldCheck className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-600" /> },
+  ], []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50/30 to-white">
       {/* Mobile-Optimized Hero */}
       <section className="container mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/svg/grid.svg')] opacity-[0.02] pointer-events-none" />
+        {/* Hide grid background on small screens */}
+        <div className="absolute inset-0 hidden sm:block bg-[url('/svg/grid.svg')] opacity-[0.02] pointer-events-none" />
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -81,17 +88,15 @@ export default function HomeClient() {
               Work that works for you
             </span>
           </motion.h1>
-
           <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 sm:mb-10 max-w-3xl mx-auto leading-relaxed">
-            Connect with <span className="font-semibold text-emerald-600">verified local opportunities</span> in real-time. 
+            Connect with <span className="font-semibold text-emerald-600">verified local opportunities</span> in real-time.
             Simple, fast, and reliable - earn or hire in minutes.
           </p>
-
           <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-16 sm:mb-20">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-gradient-to-br from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white px-6 py-4 sm:px-8 sm:py-5 rounded-lg sm:rounded-[1.25rem] text-base sm:text-lg font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto"
+              className="min-h-[48px] bg-gradient-to-br from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white px-6 py-4 sm:px-8 sm:py-5 rounded-lg sm:rounded-[1.25rem] text-base sm:text-lg font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto"
             >
               <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
               Find Work Now
@@ -99,7 +104,7 @@ export default function HomeClient() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-white border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-6 py-4 sm:px-8 sm:py-5 rounded-lg sm:rounded-[1.25rem] text-base sm:text-lg font-semibold transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto"
+              className="min-h-[48px] bg-white border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-6 py-4 sm:px-8 sm:py-5 rounded-lg sm:rounded-[1.25rem] text-base sm:text-lg font-semibold transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto"
             >
               <UserCheck className="w-5 h-5 sm:w-6 sm:h-6" />
               Hire Workers
@@ -115,11 +120,7 @@ export default function HomeClient() {
           variants={staggerVariants}
           className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8 mb-20 sm:mb-28 max-w-6xl mx-auto"
         >
-          {[
-            { value: '100+', label: 'Daily Gigs Posted', icon: <BadgeDollarSign className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-600" /> },
-            { value: '4.8', label: 'Average Rating', icon: <Star className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-600" /> },
-            { value: '99%', label: 'Verified Workers', icon: <ShieldCheck className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-600" /> },
-          ].map((stat) => (
+          {stats.map((stat) => (
             <motion.div
               key={stat.label}
               variants={fadeInUp}
@@ -226,7 +227,7 @@ export default function HomeClient() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-white text-emerald-600 px-6 py-4 sm:px-8 sm:py-5 rounded-lg sm:rounded-[1.25rem] text-base sm:text-lg font-semibold hover:bg-gray-50 transition-all shadow-lg flex items-center justify-center gap-2 sm:gap-3 mx-auto w-full sm:w-auto"
+              className="min-h-[48px] bg-white text-emerald-600 px-6 py-4 sm:px-8 sm:py-5 rounded-lg sm:rounded-[1.25rem] text-base sm:text-lg font-semibold hover:bg-gray-50 transition-all shadow-lg flex items-center justify-center gap-2 sm:gap-3 mx-auto w-full sm:w-auto"
             >
               <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
               Start Free Today
