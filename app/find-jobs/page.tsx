@@ -7,7 +7,7 @@ import { FaMapMarkerAlt, FaCalendarAlt, FaEuroSign, FaFilter } from 'react-icons
 import { Spinner } from '@/components/ui/spinner';
 
 interface Job {
-  vrsta_posla: ReactNode;
+  vrsta_posla: string;
   id: string;
   grad: string;
   adresa: string;
@@ -34,14 +34,20 @@ export default function FindJobs() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const parseNumberParam = (param: string | null, defaultValue: number): number => {
+    if (param === null) return defaultValue;
+    const parsed = parseFloat(param);
+    return isNaN(parsed) ? defaultValue : parsed;
+  };
+
   // Query parameters extraction
   const city = searchParams.get('city') || '';
   const wageType = searchParams.get('wageType') || '';
-  const wageFrom = parseFloat(searchParams.get('wageFrom') || '0');
-  const wageTo = parseFloat(searchParams.get('wageTo') || 'Infinity');
+  const wageFrom = parseNumberParam(searchParams.get('wageFrom'), 0);
+  const wageTo = parseNumberParam(searchParams.get('wageTo'), Infinity);
   const dateFrom = searchParams.get('dateFrom') || '';
   const dateTo = searchParams.get('dateTo') || '';
-  const vrsta_posla = searchParams.get('vrsta_posla');
+  const vrsta_poslaFilter = searchParams.get('vrsta_posla');
   // Sorting and filtering logic
   const sortedJobs = [...jobs].sort((a, b) => {
     const dateA = new Date(a.created_at).getTime();
@@ -52,19 +58,14 @@ export default function FindJobs() {
   const filteredJobs = sortedJobs.filter((job) => {
     const jobDate = new Date(job.created_at).toISOString().split('T')[0];
     const matchesCity = city ? job.grad.toLowerCase().includes(city.toLowerCase()) : true;
-    
-    // Debugging logs
-    console.log("Filter Wage Type:", wageType);
-    console.log("Job Wage Type:", job.wage_type);
-  
-    // Fix: Only apply wageType filter if wageType is provided
     const matchesWageType = wageType ? job.wage_type.toLowerCase() === wageType.toLowerCase() : true;
-    
     const matchesWageRange = job.dnevnica >= wageFrom && job.dnevnica <= wageTo;
-    const matchesDateRange =
-      (!dateFrom || jobDate >= dateFrom) && (!dateTo || jobDate <= dateTo);
-  
-    return matchesCity && matchesWageType && matchesWageRange && matchesDateRange;
+    const matchesDateRange = (!dateFrom || jobDate >= dateFrom) && (!dateTo || jobDate <= dateTo);
+    const matchesVrstaPosla = vrsta_poslaFilter 
+      ? job.vrsta_posla.toLowerCase() === vrsta_poslaFilter.toLowerCase() 
+      : true;
+
+    return matchesCity && matchesWageType && matchesWageRange && matchesDateRange && matchesVrstaPosla;
   });
 
   useEffect(() => {
