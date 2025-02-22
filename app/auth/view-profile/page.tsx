@@ -262,7 +262,7 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <StatCard 
                   icon={<Star className="w-6 h-6 text-green-600" />}
                   title="Rating"
@@ -287,7 +287,7 @@ const ProfilePage: React.FC = () => {
                   value={applications.length}
                   darkMode={darkMode}
                 />
-              </div>
+                </div>
             </div>
           </div>
 
