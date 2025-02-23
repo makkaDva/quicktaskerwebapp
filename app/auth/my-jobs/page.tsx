@@ -1,3 +1,4 @@
+// app/auth/my-jobs/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -15,7 +16,8 @@ interface Job {
   created_at: string;
 }
 
-export default function MyJobsPage() {
+// Separate the client component
+function JobsList() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -24,15 +26,18 @@ export default function MyJobsPage() {
     const fetchJobs = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data, error } = await supabase
-            .from('jobs')
-            .select('*')
-            .eq('user_email', user.email);
-
-          if (error) throw error;
-          setJobs(data || []);
+        if (!user) {
+          router.push('/login');
+          return;
         }
+
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('*')
+          .eq('user_email', user.email);
+
+        if (error) throw error;
+        setJobs(data || []);
       } catch (error) {
         console.error('Error fetching jobs:', error);
       } finally {
@@ -41,10 +46,14 @@ export default function MyJobsPage() {
     };
 
     fetchJobs();
-  }, []);
+  }, [router]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+      </div>
+    );
   }
 
   return (
@@ -112,7 +121,7 @@ export default function MyJobsPage() {
                     <p className="text-xl font-semibold text-green-600">
                       {job.dnevnica}€
                       <span className="text-sm text-gray-500 ml-2">
-                        {job.wage_type === 'per day' ? '/day' : '/hour'}
+                        {job.wage_type === 'per_day' ? '/day' : '/hour'}
                       </span>
                     </p>
                   </div>
@@ -164,4 +173,9 @@ export default function MyJobsPage() {
       </motion.section>
     </div>
   );
+}
+
+// Default export as a client component wrapper
+export default function MyJobsPage() {
+  return <JobsList />;
 }
