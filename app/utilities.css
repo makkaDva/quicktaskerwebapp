@@ -1,0 +1,13 @@
+@layer utilities {
+    .text-gradient {
+      @apply bg-clip-text text-transparent bg-gradient-to-r from-[#1fd655] to-[#1aa34a];
+    }
+    
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+  }
