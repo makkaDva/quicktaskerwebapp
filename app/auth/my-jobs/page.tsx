@@ -18,7 +18,7 @@ interface Job {
 }
 
 // Error Fallback Component
-function ErrorFallback({ error, resetErrorBoundary }) {
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center p-8 bg-white rounded-lg shadow-lg">
@@ -36,7 +36,7 @@ function ErrorFallback({ error, resetErrorBoundary }) {
 }
 
 // Job Card Component
-function JobCard({ job, onClick }) {
+function JobCard({ job, onClick }: { job: Job; onClick: () => void }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
