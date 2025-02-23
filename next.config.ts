@@ -27,9 +27,6 @@ const nextConfig: NextConfig = {
     },
   },
 
-  // Vercel specific settings
-  swcMinify: true,
-  
   // Compiler options
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",

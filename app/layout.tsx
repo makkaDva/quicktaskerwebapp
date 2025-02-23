@@ -3,6 +3,7 @@ import { usePathname } from 'next/navigation';
 import { AuthProvider } from './AuthContext';
 import Navbar from './components/Navbar';
 import './globals.css';
+import 'punycode';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

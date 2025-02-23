@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import { motion } from 'framer-motion';
 import { FaMapMarkerAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
+import { ErrorBoundary } from 'react-error-boundary';
 
 interface Job {
   id: string;
@@ -16,10 +17,75 @@ interface Job {
   created_at: string;
 }
 
-// Separate the client component
+// Error Fallback Component
+function ErrorFallback({ error, resetErrorBoundary }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center p-8 bg-white rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
+        <p className="text-gray-600 mb-4">{error.message}</p>
+        <button
+          onClick={resetErrorBoundary}
+          className="bg-green-600 text-white px-4 py-2 rounded-lg"
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Job Card Component
+function JobCard({ job, onClick }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02 }}
+      className="p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-100 cursor-pointer"
+      onClick={onClick}
+    >
+      {/* Your existing job card content */}
+      <div className="mb-4 flex items-center justify-between">
+        <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
+          {job.wage_type === 'per_day' ? 'Daily Rate' : 'Job offer'}
+        </span>
+        <span className="text-sm text-gray-500">
+          {new Date(job.created_at).toLocaleDateString()}
+        </span>
+      </div>
+
+      <h3 className="text-2xl font-bold text-gray-900 mb-2">{job.grad}</h3>
+
+      <div className="space-y-3 text-gray-600">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+            <FaMapMarkerAlt className="text-green-600 w-5 h-5" />
+          </div>
+          <p className="text-gray-700">{job.adresa}</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+            <FaEuroSign className="text-green-600 w-5 h-5" />
+          </div>
+          <p className="text-xl font-semibold text-green-600">
+            {job.dnevnica}€
+            <span className="text-sm text-gray-500 ml-2">
+              {job.wage_type === 'per_day' ? '/day' : '/hour'}
+            </span>
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// JobsList Component
 function JobsList() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -39,7 +105,7 @@ function JobsList() {
         if (error) throw error;
         setJobs(data || []);
       } catch (error) {
-        console.error('Error fetching jobs:', error);
+        setError(error instanceof Error ? error : new Error('Failed to fetch jobs'));
       } finally {
         setLoading(false);
       }
@@ -56,77 +122,27 @@ function JobsList() {
     );
   }
 
+  if (error) {
+    throw error; // This will be caught by the ErrorBoundary
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+      {/* Your existing JSX */}
       <section className="container mx-auto px-4 sm:px-6 py-16">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-7xl mx-auto"
         >
-          {/* Header Section */}
-          <div className="text-center mb-16">
-            <motion.h1
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-4xl md:text-5xl font-bold text-gray-900 mb-4"
-            >
-              <span className="bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
-                My Jobs
-              </span>
-            </motion.h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Here are the jobs you&apos;ve posted
-            </p>
-          </div>
-
-          {/* Job Listings */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            className="space-y-8"
-          >
+          {/* Jobs list */}
+          <motion.div initial="hidden" animate="visible" className="space-y-8">
             {jobs.map((job) => (
-              <motion.div
+              <JobCard
                 key={job.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.02 }}
-                className="p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-100 cursor-pointer"
+                job={job}
                 onClick={() => router.push(`/view-job/${job.id}`)}
-              >
-                <div className="mb-4 flex items-center justify-between">
-                  <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
-                    {job.wage_type === 'per_day' ? 'Daily Rate' : 'Job offer'}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    {new Date(job.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{job.grad}</h3>
-
-                <div className="space-y-3 text-gray-600">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                      <FaMapMarkerAlt className="text-green-600 w-5 h-5" />
-                    </div>
-                    <p className="text-gray-700">{job.adresa}</p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                      <FaEuroSign className="text-green-600 w-5 h-5" />
-                    </div>
-                    <p className="text-xl font-semibold text-green-600">
-                      {job.dnevnica}€
-                      <span className="text-sm text-gray-500 ml-2">
-                        {job.wage_type === 'per_day' ? '/day' : '/hour'}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
+              />
             ))}
           </motion.div>
 
@@ -148,34 +164,15 @@ function JobsList() {
           )}
         </motion.div>
       </section>
-
-      {/* CTA Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="bg-gradient-to-br from-green-600 to-emerald-500 text-white py-16"
-      >
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-6">Need Help Managing Your Jobs?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Explore tools and tips to make your job postings more effective
-          </p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-white text-green-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-50 transition-all shadow-lg flex items-center gap-2 mx-auto"
-          >
-            <FaFilter className="w-5 h-5" />
-            Manage Jobs
-          </motion.button>
-        </div>
-      </motion.section>
     </div>
   );
 }
 
-// Default export as a client component wrapper
+// Default export wrapped in ErrorBoundary
 export default function MyJobsPage() {
-  return <JobsList />;
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <JobsList />
+    </ErrorBoundary>
+  );
 }
