@@ -5,11 +5,16 @@ import supabase from '@/lib/supabase';
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import dynamic from 'next/dynamic';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { useRouter } from 'next/navigation';
 import { User } from '@supabase/supabase-js';
 import { useCallback } from 'react';
+
+// Dynamically import Leaflet when in client environment
+let L: { Icon: new (arg0: { iconUrl: string; shadowUrl: string; iconSize: number[]; iconAnchor: number[]; popupAnchor: number[]; shadowSize: number[]; className: string; }) => React.SetStateAction<null>; };
+if (typeof window !== 'undefined') {
+  L = require('leaflet');
+  require('leaflet/dist/leaflet.css');
+}
 
 const MapContainer = dynamic(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
@@ -37,22 +42,33 @@ const Popup = dynamic(
   { ssr: false }
 );
 
-const markerIcon = L && new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-  className: 'animate-bounce-marker'
-});
+// Move markerIcon initialization inside a useEffect
+const useMarkerIcon = () => {
+  const [markerIcon, setMarkerIcon] = useState(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && L) {
+      setMarkerIcon(new L.Icon({
+        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+        className: 'animate-bounce-marker'
+      }));
+    }
+  }, []);
+
+  return markerIcon;
+};
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
-const countryCodes: { [key: string]: string } = {
+const countryCodes = {
   Albania: '+355',
   Andorra: '+376',
   Armenia: '+374',
@@ -119,6 +135,7 @@ interface OpenCageResponse {
 
 const PostJob = () => {
   const router = useRouter();
+  const markerIcon = useMarkerIcon();
   const [step, setStep] = useState(1);
   const [location, setLocation] = useState('');
   const [suggestions, setSuggestions] = useState<{ formatted: string; city: string; road: string; lat: number; lng: number; country: string }[]>([]);
@@ -153,7 +170,7 @@ const PostJob = () => {
         lng: result.geometry.lng,
         country: result.components.country,
       })));
-    }finally {
+    } finally {
       setIsLoading(false);
     }
   };
@@ -180,7 +197,7 @@ const PostJob = () => {
     switch(step) {
       case 1:
         if (!selectedCity) {
-          alert('Pease choose location of the work');
+          alert('Please choose location of the work');
           return;
         }
         break;
@@ -232,8 +249,6 @@ const PostJob = () => {
 
   const isSubmitting = useRef(false);
 
-  
-
   const submitJob = useCallback(async (user: User) => {
     const jobData = {
       grad: selectedCity?.city || '',
@@ -268,8 +283,10 @@ const PostJob = () => {
     selectedCity, location, jobDescription, wage, countryCode, phoneNumber,
     numberOfWorkers, wageType, dateFrom, dateTo, numberOfWorkingHours, typeOfWork, router
   ]);
-  
+
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const handleMessage = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin || isSubmitting.current) return;
   
@@ -295,7 +312,7 @@ const PostJob = () => {
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [submitJob]); // Add submitJob to dependencies
+  }, [submitJob]);
 
   const resetForm = () => {
     setStep(1);
@@ -318,20 +335,15 @@ const PostJob = () => {
     
     if (!user) {
       isSubmitting.current = true;
-      window.open('/login', '_blank', 'width=500,height=600');
+      if (typeof window !== 'undefined') {
+        window.open('/login', '_blank', 'width=500,height=600');
+      }
       return;
     }
   
     try {
       isSubmitting.current = true;
-      
-      // Use the submitJob function instead of direct submission
       await submitJob(user);
-  
-      //alert('Job posted successfully!');
-      resetForm();
-      //router.push('/find-jobs');
-    
     } catch (error) {
       alert('An error occurred while posting the job.');
     } finally {
@@ -428,30 +440,32 @@ const PostJob = () => {
               )}
             </div>
             <div className="h-[400px] rounded-2xl overflow-hidden border border-gray-200">
-              <MapContainer
-                key={selectedCity ? `${selectedCity.lat}-${selectedCity.lng}` : 'default-map'}
-                center={selectedCity ? [selectedCity.lat, selectedCity.lng] : [44.7866, 20.4489]}
-                zoom={selectedCity ? 13 : 5}
-                className="h-full w-full"
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                {selectedCity && (
-                  <Marker 
-                    position={[selectedCity.lat, selectedCity.lng]} 
-                    icon={markerIcon}
-                  >
-                    <Popup className="custom-popup" closeButton={false}>
-                      <div className="font-semibold text-green-600">
-                        <MapPin className="inline mr-2" size={18} />
-                        {selectedCity.city}
-                      </div>
-                    </Popup>
-                  </Marker>
-                )}
-              </MapContainer>
+              {typeof window !== 'undefined' && (
+                <MapContainer
+                  key={selectedCity ? `${selectedCity.lat}-${selectedCity.lng}` : 'default-map'}
+                  center={selectedCity ? [selectedCity.lat, selectedCity.lng] : [44.7866, 20.4489]}
+                  zoom={selectedCity ? 13 : 5}
+                  className="h-full w-full"
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  {selectedCity && markerIcon && (
+                    <Marker 
+                      position={[selectedCity.lat, selectedCity.lng]} 
+                      icon={markerIcon}
+                    >
+                      <Popup className="custom-popup" closeButton={false}>
+                        <div className="font-semibold text-green-600">
+                          <MapPin className="inline mr-2" size={18} />
+                          {selectedCity.city}
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )}
+                </MapContainer>
+              )}
             </div>
           </div>
         );
@@ -508,241 +522,216 @@ const PostJob = () => {
           </div>
         );
 
-        case 4:
-          return (
-            <div className="w-full max-w-4xl space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Trenutni mesec */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center bg-green-100 p-3 rounded-lg">
-                    <h3 className="font-semibold text-green-700">
-                      {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}
-                    </h3>
-                  </div>
-                  <div className="grid grid-cols-7 gap-1">
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                      <div key={day} className="text-center text-sm text-green-600 font-medium p-1">
-                        {day}
-                      </div>
-                    ))}
-                    {generateCalendarDays(new Date().getMonth(), new Date().getFullYear()).map((day, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleDateClick(day.date)}
-                        disabled={day.isDisabled}
-                        className={`
-                          p-2 text-sm rounded-lg transition-all
-                          ${day.isCurrentMonth ? 
-                            (isDateSelected(day.date) ? 'bg-green-600 text-white' : 'hover:bg-green-100 text-gray-600') 
-                            : 'text-gray-400'}
-                          ${isDateInRange(day.date) && 'bg-green-400 text-white'}
-                        `}
-                      >
-                        {day.date.getDate()}
-                      </button>
-                    ))}
+      case 4:
+        return (
+          <div className="w-full max-w-4xl space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Current month */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center bg-green-100 p-3 rounded-lg">
+                  <h3 className="font-semibold text-green-700">
+                    {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}
+                  </h3>
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                    <div key={day} className="text-center text-sm text-green-600 font-medium p-1">
+                      {day}
+                    </div>
+                  ))}
+                  {generateCalendarDays(new Date().getMonth(), new Date().getFullYear()).map((day, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleDateClick(day.date)}
+                      disabled={day.isDisabled}
+                      className={`
+                        p-2 text-sm rounded-lg transition-all
+                        ${day.isCurrentMonth ? 
+                          (isDateSelected(day.date) ? 'bg-green-600 text-white' : 'hover:bg-green-100 text-gray-600') 
+                          : 'text-gray-400'}
+                        ${isDateInRange(day.date) && 'bg-green-400 text-white'}
+                      `}
+                    >
+                      {day.date.getDate()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Next month */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center bg-green-100 p-3 rounded-lg">
+                  <h3 className="font-semibold text-green-700">
+                    {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleString('default', { month: 'long' })} 
+                    {new Date(new Date().setMonth(new Date().getMonth() + 1)).getFullYear()}
+                  </h3>
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                    <div key={day} className="text-center text-sm text-green-600 font-medium p-1">
+                      {day}
+                    </div>
+                  ))}
+                  {generateCalendarDays(new Date().getMonth() + 1, new Date().getFullYear()).map((day, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleDateClick(day.date)}
+                      disabled={day.isDisabled}
+                      className={`
+                        p-2 text-sm rounded-lg transition-all
+                        ${day.isCurrentMonth ? 
+                          (isDateSelected(day.date) ? 'bg-green-600 text-white' : 'hover:bg-green-100 text-gray-600') 
+                          : 'text-gray-400'}
+                        ${isDateInRange(day.date) && 'bg-green-400 text-white'}
+                      `}
+                    >
+                      {day.date.getDate()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4 bg-green-50 p-4 rounded-xl">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-green-700">Selected period:</label>
+                <div className="font-semibold text-green-600">
+                  {dateFrom ? new Date(dateFrom).toLocaleDateString() : 'Not selected'} - 
+                  {dateTo ? new Date(dateTo).toLocaleDateString() : 'Not selected'}
+                </div>
+              </div>
+              <button 
+                onClick={() => { setDateFrom(''); setDateTo(''); }}
+                className="text-green-600 hover:text-green-700 text-sm font-medium"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="w-full max-w-md mx-auto space-y-10 px-4">
+            <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
+              Enter number of working hours
+            </h2>
+
+            <div className="flex items-center justify-center gap-6">
+              <button
+                onClick={() => setNumberOfWorkingHours(prev => Math.max(1, prev - 1))}
+                className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
+              >
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                </svg>
+              </button>
+
+              <div className="text-center space-y-2">
+                <div className="text-6xl font-bold text-green-600">{numberOfWorkingHours}</div>
+              </div>
+
+              <button
+                onClick={() => setNumberOfWorkingHours(prev => Math.min(24, prev + 1))}
+                className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
+              >
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-6 pt-6">
+              <h3 className="text-lg font-semibold text-gray-700 text-center">Advice</h3>
+              
+              <div className="flex flex-col gap-4">
+                <div className="flex items-start gap-3 mx-auto">
+                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+                  <div className="text-center">
+                    <p className="text-gray-600">
+                      8 hours is optimal<br /> 
+                    </p>
                   </div>
                 </div>
-        
-                {/* Sledeći mesec */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center bg-green-100 p-3 rounded-lg">
-                    <h3 className="font-semibold text-green-700">
-                      {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleString('default', { month: 'long' })} 
-                      {new Date(new Date().setMonth(new Date().getMonth() + 1)).getFullYear()}
-                    </h3>
-                  </div>
-                  <div className="grid grid-cols-7 gap-1">
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                      <div key={day} className="text-center text-sm text-green-600 font-medium p-1">
-                        {day}
-                      </div>
-                    ))}
-                    {generateCalendarDays(new Date().getMonth() + 1, new Date().getFullYear()).map((day, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleDateClick(day.date)}
-                        disabled={day.isDisabled}
-                        className={`
-                          p-2 text-sm rounded-lg transition-all
-                          ${day.isCurrentMonth ? 
-                            (isDateSelected(day.date) ? 'bg-green-600 text-white' : 'hover:bg-green-100 text-gray-600') 
-                            : 'text-gray-400'}
-                          ${isDateInRange(day.date) && 'bg-green-400 text-white'}
-                        `}
-                      >
-                        {day.date.getDate()}
-                      </button>
-                    ))}
+
+                <div className="flex items-start gap-3 mx-auto">
+                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+                  <div className="text-center">
+                    <p className="text-gray-600">
+                      24 hours is maximum<br />
+                    </p>
                   </div>
                 </div>
               </div>
-        
-              <div className="grid md:grid-cols-2 gap-4 bg-green-50 p-4 rounded-xl">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-green-700">Odabrani period:</label>
-                  <div className="font-semibold text-green-600">
-                    {dateFrom ? new Date(dateFrom).toLocaleDateString() : 'Nije izabrano'} - 
-                    {dateTo ? new Date(dateTo).toLocaleDateString() : 'Nije izabrano'}
-                  </div>
-                </div>
-                <button 
-                  onClick={() => { setDateFrom(''); setDateTo(''); }}
-                  className="text-green-600 hover:text-green-700 text-sm font-medium"
-                >
-                  Reset
-                </button>
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="w-full max-w-md mx-auto space-y-10 px-4">
+            <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
+              How many workers do you need?
+            </h2>
+
+            <div className="flex items-center justify-center gap-6">
+              <button
+                onClick={() => setNumberOfWorkers(prev => Math.max(1, prev - 1))}
+                className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
+              >
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                </svg>
+              </button>
+
+              <div className="text-center space-y-2">
+                <div className="text-6xl font-bold text-green-600">{numberOfWorkers}</div>
               </div>
-            </div>
-          );
 
-          case 5:
-  return (
-    <div className="w-full max-w-md mx-auto space-y-10 px-4">
-      {/* Naslov */}
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
-        Enter number of working hours
-      </h2>
-
-      {/* Brojač sa dugmadima */}
-      <div className="flex items-center justify-center gap-6">
-        <button
-          onClick={() => setNumberOfWorkingHours(prev => Math.max(1, prev - 1))}
-          className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
-        >
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-          </svg>
-        </button>
-
-        <div className="text-center space-y-2">
-          <div className="text-6xl font-bold text-green-600">{numberOfWorkingHours}</div>
-          {/* <span className="text-gray-500 text-sm block">maksimalno</span> */}
-        </div>
-
-        <button
-          onClick={() => setNumberOfWorkingHours(prev => Math.min(24, prev + 1))}
-          className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
-        >
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Opcije */}
-      <div className="space-y-6 pt-6">
-        <h3 className="text-lg font-semibold text-gray-700 text-center">Advice</h3>
-        
-        <div className="flex flex-col gap-4">
-          <div className="flex items-start gap-3 mx-auto">
-            <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
-            <div className="text-center">
-              <p className="text-gray-600">
-                8 is hours optimal<br /> 
-              </p>
+              <button
+                onClick={() => setNumberOfWorkers(prev => Math.min(50, prev + 1))}
+                className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
+              >
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </button>
             </div>
           </div>
+        );
 
-          <div className="flex items-start gap-3 mx-auto">
-            <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
-            <div className="text-center">
-              <p className="text-gray-600">
-                24 hours is maximum<br />
-                
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      case 7:
+        return (
+          <div className="w-full max-w-2xl mx-auto flex justify-center items-center h-full">
+            <div className="space-y-4 w-full">
+              <div className="space-y-2">
+                <label className="text-gray-600 font-medium">Type of Work</label>
+                <input
+                  type="text"
+                  value={typeOfWork}
+                  onChange={(e) => setTypeOfWork(e.target.value)}
+                  placeholder="Type of work (1 or 2 words, e.g., cleaning)"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all"
+                />
+              </div>
 
-    </div>
-  ); 
-
-  case 6:
-    return (
-      <div className="w-full max-w-md mx-auto space-y-10 px-4">
-        {/* Naslov */}
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
-          How many workers do you need?
-        </h2>
-  
-        {/* Brojač sa dugmadima */}
-        <div className="flex items-center justify-center gap-6">
-          <button
-            onClick={() => setNumberOfWorkers(prev => Math.max(1, prev - 1))}
-            className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
-          >
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-            </svg>
-          </button>
-  
-          <div className="text-center space-y-2">
-            <div className="text-6xl font-bold text-green-600">{numberOfWorkers}</div> 
-          </div>
-  
-          <button
-            onClick={() => setNumberOfWorkers(prev => Math.min(50, prev + 1))}
-            className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
-          >
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-          </button>
-        </div>
-  
-        {/* Opcije */}
-        <div className="space-y-6 pt-6">
-          
-          <div className="flex flex-col gap-4">
-  
-            <div className="flex items-start gap-3 mx-auto">
-              <div className="text-center">
-
+              <div className="space-y-2">
+                <label className="text-gray-600 font-medium">Description</label>
+                <textarea
+                  value={jobDescription}
+                  onChange={(e) => setJobDescription(e.target.value)}
+                  placeholder="Describe the job, requirements, and any important information"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all h-48"
+                />
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    );
-
-    case 7:
-      return (
-        <div className="w-full max-w-2xl mx-auto flex justify-center items-center h-full">
-          <div className="space-y-4 w-full">
-            {/* Type of Work Input */}
-            <div className="space-y-2">
-              <label className="text-gray-600 font-medium">Type of Work</label>
-              <input
-                type="text"
-                value={typeOfWork}
-                onChange={(e) => setTypeOfWork(e.target.value)}
-                placeholder="Type of work (1 or 2 words, e.g., cleaning)"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all"
-              />
-            </div>
-    
-            {/* Job Description Textarea */}
-            <div className="space-y-2">
-              <label className="text-gray-600 font-medium">Description</label>
-              <textarea
-                value={jobDescription}
-                onChange={(e) => setJobDescription(e.target.value)}
-                placeholder="Describe the job, requirements, and any important information"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all h-48"
-              />
-            </div>
-          </div>
-        </div>
-      );
+        );
 
       default:
         return null;
     }
   };
-
-  
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12">
