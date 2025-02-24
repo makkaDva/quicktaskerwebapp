@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { User } from '@supabase/supabase-js';
 import { useCallback } from 'react';
+import L from 'leaflet';
 
 const MapContainer = dynamic(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
@@ -37,7 +38,7 @@ const Popup = dynamic(
 
 // Move markerIcon initialization inside a useEffect
 const useMarkerIcon = () => {
-  const [markerIcon, setMarkerIcon] = useState(null);
+  const [markerIcon, setMarkerIcon] = useState<L.Icon | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && L) {

@@ -13,6 +13,7 @@
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@next/bundle-analyzer": "^15.1.6",
+    "@prisma/client": "^6.4.1",
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.48.1",
@@ -46,6 +47,7 @@
     "eslint-config-next": "15.1.6",
     "patch-package": "^8.0.0",
     "postcss": "^8.5.1",
+    "prisma": "^6.4.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
   }
