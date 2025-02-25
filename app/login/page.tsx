@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import supabase from "../../lib/supabase";
 import { FaGoogle } from "react-icons/fa";
 
-
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -12,34 +11,29 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-
-
   const handleLogin = async (e: FormEvent) => {
-    e.preventDefault(); // Prevent the default form submission behavior
-    setLoading(true); // Set loading state to true
-    setError(null); // Clear any previous errors
-  
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     try {
-      // Attempt to sign in with email and password using Supabase
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-  
-      // If there's an error, throw it
-      if (error) throw error;
-  
-      // If successful, redirect the user to the dashboard or home page
-      router.push('/find-jobs'); // Adjust the redirect path as needed
 
-      // Notify the parent window that login was successful
-      window.opener.postMessage('login-success', window.location.origin);
-      window.close();
+      if (error) throw error;
+
+      router.push('/find-jobs');
+
+      // Notify the parent window that login was successful (client-side only)
+      if (typeof window !== 'undefined' && window.opener) {
+        window.opener.postMessage('login-success', window.location.origin);
+        window.close();
+      }
     } catch (err) {
-      // Handle any errors that occur during the login process
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
-      // Set loading state to false after the login attempt is complete
       setLoading(false);
     }
   };
@@ -49,10 +43,10 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`, // Redirect to the callback page
+          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
         },
       });
-  
+
       if (error) throw error;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google login failed');

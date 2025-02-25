@@ -1,6 +1,7 @@
 'use client';
+import { ReactNode, Suspense } from "react";
 import { motion } from 'framer-motion';
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect } from 'react';
 import supabase from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaMapMarkerAlt, FaCalendarAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
@@ -28,7 +29,7 @@ const staggerVariants = {
   visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
 };
 
-export default function FindJobs() {
+function FindJobsContent() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +44,6 @@ export default function FindJobs() {
   const wageTo = parseFloat(searchParams.get('wageTo') || 'Infinity');
   const dateFrom = searchParams.get('dateFrom') || '';
   const dateTo = searchParams.get('dateTo') || '';
-  const vrsta_posla = searchParams.get('vrsta_posla');
 
   // Sorting and filtering logic
   const sortedJobs = [...jobs].sort((a, b) => {
@@ -100,7 +100,6 @@ export default function FindJobs() {
   }
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       <section className="container mx-auto px-4 sm:px-6 py-16">
         <motion.div
@@ -242,6 +241,17 @@ export default function FindJobs() {
         </div>
       </motion.section>
     </div>
+  );
+}
+
+export default function FindJobs() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex justify-center items-center">
+        <Spinner className="w-12 h-12 text-green-600" />
+      </div>
+    }>
+      <FindJobsContent />
     </Suspense>
   );
 }

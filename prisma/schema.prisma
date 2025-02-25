@@ -1,0 +1,26 @@
+// 1. Data Source (Database Connection)
+datasource db {
+  provider = "postgresql" // Supabase uses PostgreSQL
+  url      = env("NEXT_PUBLIC_SUPABASE_URL") // Use an environment variable for the connection string
+}
+
+// 2. Generator (Prisma Client)
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 3. Data Models (Tables/Collections)
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  posts     Post[]   // One-to-Many relationship with Post
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String?
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id]) // Many-to-One relationship with User
+}
