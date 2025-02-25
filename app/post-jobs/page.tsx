@@ -164,7 +164,7 @@ const PostJob = () => {
         lng: result.geometry.lng,
         country: result.components.country,
       })));
-    }finally {
+    } finally {
       setIsLoading(false);
     }
   };
@@ -243,8 +243,6 @@ const PostJob = () => {
 
   const isSubmitting = useRef(false);
 
-  
-
   const submitJob = useCallback(async (user: User) => {
     const jobData = {
       grad: selectedCity?.city || '',
@@ -284,14 +282,11 @@ const PostJob = () => {
     if (typeof window === 'undefined') return;
 
     const handleMessage = async (event: MessageEvent) => {
-      console.log('Message received:', event.data); // Debugging line
-      //if (event.origin !== window.location.origin || isSubmitting.current) return;
-  
+      console.log('Message received:', event.data);
       if (event.data === 'login-success') {
-        console.log('Login success message received'); // Debugging line
+        console.log('Login success message received');
         isSubmitting.current = true;
   
-        // Get the authenticated user
         const { data: { user } } = await supabase.auth.getUser();
         
         if (!user) {
@@ -301,7 +296,6 @@ const PostJob = () => {
         }
   
         try {
-          // Use the submitJob function to post the job
           await submitJob(user);
         } catch (error) {
           alert('An error occurred while posting the job.');
@@ -311,14 +305,12 @@ const PostJob = () => {
       }
     };
   
-    // Add the event listener for messages
     window.addEventListener('message', handleMessage);
   
-    // Cleanup the event listener on unmount
     return () => {
       window.removeEventListener('message', handleMessage);
     };
-  }, [submitJob]); // Add submitJob to dependencies
+  }, [submitJob]);
 
   const resetForm = () => {
     setStep(1);
