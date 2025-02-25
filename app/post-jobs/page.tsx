@@ -1,15 +1,16 @@
 "use client";
+
 import { motion } from 'framer-motion';
 import { MapPin, Phone, Wallet, Calendar, Clock, Users, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import supabase from '@/lib/supabase';
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import dynamic from 'next/dynamic';
+import 'leaflet/dist/leaflet.css';
 import { useRouter } from 'next/navigation';
-import { User } from '@supabase/supabase-js';
-import { useCallback } from 'react';
 import L from 'leaflet';
 
+// Dynamically import Leaflet components with no SSR
 const MapContainer = dynamic(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
   { 
@@ -25,10 +26,7 @@ const TileLayer = dynamic(
 
 const Marker = dynamic(
   () => import('react-leaflet').then((mod) => mod.Marker),
-  { 
-    ssr: false,
-    loading: () => null
-  }
+  { ssr: false }
 );
 
 const Popup = dynamic(
@@ -36,25 +34,32 @@ const Popup = dynamic(
   { ssr: false }
 );
 
-// Move markerIcon initialization inside a useEffect
-const useMarkerIcon = () => {
-  const [markerIcon, setMarkerIcon] = useState<L.Icon | null>(null);
-
+// Custom marker icon component that uses Leaflet only on the client side
+const MarkerIcon = () => {
+  const [icon, setIcon] = useState<L.Icon | null>(null);
+  
   useEffect(() => {
-    if (typeof window !== 'undefined' && L) {
-      setMarkerIcon(new L.Icon({
-        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41],
-        className: 'animate-bounce-marker'
-      }));
-    }
+    // Import L only on client side
+    import('leaflet').then((L) => {
+      return setIcon(
+        new L.Icon({
+          iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+          shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41],
+          className: 'animate-bounce-marker'
+        })
+      );
+    });
+    
+    return () => {
+      setIcon(null);
+    };
   }, []);
-
-  return markerIcon;
+  
+  return icon;
 };
 
 const fadeInUp = {
@@ -129,7 +134,6 @@ interface OpenCageResponse {
 
 const PostJob = () => {
   const router = useRouter();
-  const markerIcon = useMarkerIcon();
   const [step, setStep] = useState(1);
   const [location, setLocation] = useState('');
   const [suggestions, setSuggestions] = useState<{ formatted: string; city: string; road: string; lat: number; lng: number; country: string }[]>([]);
@@ -145,10 +149,71 @@ const PostJob = () => {
   const [numberOfWorkers, setNumberOfWorkers] = useState(1);
   const [jobDescription, setJobDescription] = useState('');
   const [typeOfWork, setTypeOfWork] = useState('');
+  
+  const [markerIcon, setMarkerIcon] = useState<L.Icon | null>(null);
+
+  // Initialize the marker icon on the client side
+  useEffect(() => {
+    import('leaflet').then((L) => {
+      setMarkerIcon(
+        new L.Icon({
+          iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+          shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41],
+          className: 'animate-bounce-marker'
+        })
+      );
+    });
+  }, []);
 
   useEffect(() => {
     if (location && location.length >= 3) fetchSuggestions(location);
   }, [location]);
+
+  // Safely add event listener only on client side
+  useEffect(() => {
+    const handleMessage = async (event: { data: string; }) => {
+      console.log('Message received:', event.data);
+      
+      if (event.data === 'login-success') {
+        console.log('Login success message received');
+        
+        // Get the authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          alert('Login failed. Please try again.');
+          return;
+        }
+  
+        try {
+          // Use the submitJob function to post the job
+          await submitJob(user);
+        } catch (error) {
+          alert('An error occurred while posting the job.');
+        }
+      }
+    };
+  
+    // Add the event listener for messages - only on client side
+    if (typeof window !== 'undefined') {
+      window.addEventListener('message', handleMessage);
+    }
+  
+    // Cleanup the event listener on unmount
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('message', handleMessage);
+      }
+    };
+  }, [
+    location, selectedCity, phoneNumber, countryCode, wage, 
+    wageType, dateFrom, dateTo, numberOfWorkingHours, 
+    numberOfWorkers, jobDescription, typeOfWork
+  ]);
 
   const fetchSuggestions = async (query: string) => {
     setIsLoading(true);
@@ -164,6 +229,8 @@ const PostJob = () => {
         lng: result.geometry.lng,
         country: result.components.country,
       })));
+    } catch (error) {
+      alert('Failed to fetch location suggestions');
     } finally {
       setIsLoading(false);
     }
@@ -191,7 +258,7 @@ const PostJob = () => {
     switch(step) {
       case 1:
         if (!selectedCity) {
-          alert('Please choose location of the work');
+          alert('Pease choose location of the work');
           return;
         }
         break;
@@ -241,16 +308,14 @@ const PostJob = () => {
     setStep(prev => Math.max(1, prev - 1));
   };
 
-  const isSubmitting = useRef(false);
-
-  const submitJob = useCallback(async (user: User) => {
+  const submitJob = async (user: any) => {
     const jobData = {
       grad: selectedCity?.city || '',
       adresa: location,
       opis: jobDescription,
       dnevnica: parseFloat(wage),
       user_email: user.email,
-      broj_telefona: countryCode + phoneNumber,
+      broj_telefona: countryCode+phoneNumber,
       broj_radnika: numberOfWorkers,
       latitude: selectedCity?.lat || null,
       longitude: selectedCity?.lng || null,
@@ -261,56 +326,14 @@ const PostJob = () => {
       hours_per_day: numberOfWorkingHours,
       vrsta_posla: typeOfWork
     };
-  
+
     const { error } = await supabase.from('jobs').insert(jobData);
+    if (error) return alert('Job post failed');
     
-    if (error) {
-      console.error('Error posting job:', error);
-      alert('Job post failed. Please try again.');
-      return;
-    }
-  
     alert('Job posted successfully!');
     resetForm();
     router.push('/find-jobs');
-  }, [
-    selectedCity, location, jobDescription, wage, countryCode, phoneNumber,
-    numberOfWorkers, wageType, dateFrom, dateTo, numberOfWorkingHours, typeOfWork, router
-  ]);
-  
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const handleMessage = async (event: MessageEvent) => {
-      console.log('Message received:', event.data);
-      if (event.data === 'login-success') {
-        console.log('Login success message received');
-        isSubmitting.current = true;
-  
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          alert('Login failed. Please try again.');
-          isSubmitting.current = false;
-          return;
-        }
-  
-        try {
-          await submitJob(user);
-        } catch (error) {
-          alert('An error occurred while posting the job.');
-        } finally {
-          isSubmitting.current = false;
-        }
-      }
-    };
-  
-    window.addEventListener('message', handleMessage);
-  
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, [submitJob]);
+  };
 
   const resetForm = () => {
     setStep(1);
@@ -327,12 +350,11 @@ const PostJob = () => {
 
   const handleFinish = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    if (isSubmitting.current) return;
-  
+    
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      isSubmitting.current = true;
+      // Only open a new window on the client side
       if (typeof window !== 'undefined') {
         window.open('/login', '_blank', 'width=500,height=600');
       }
@@ -340,12 +362,9 @@ const PostJob = () => {
     }
   
     try {
-      isSubmitting.current = true;
       await submitJob(user);
     } catch (error) {
       alert('An error occurred while posting the job.');
-    } finally {
-      isSubmitting.current = false;
     }
   };
 
@@ -520,216 +539,235 @@ const PostJob = () => {
           </div>
         );
 
-      case 4:
-        return (
-          <div className="w-full max-w-4xl space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Current month */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center bg-green-100 p-3 rounded-lg">
-                  <h3 className="font-semibold text-green-700">
-                    {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}
-                  </h3>
-                </div>
-                <div className="grid grid-cols-7 gap-1">
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                    <div key={day} className="text-center text-sm text-green-600 font-medium p-1">
-                      {day}
-                    </div>
-                  ))}
-                  {generateCalendarDays(new Date().getMonth(), new Date().getFullYear()).map((day, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleDateClick(day.date)}
-                      disabled={day.isDisabled}
-                      className={`
-                        p-2 text-sm rounded-lg transition-all
-                        ${day.isCurrentMonth ? 
-                          (isDateSelected(day.date) ? 'bg-green-600 text-white' : 'hover:bg-green-100 text-gray-600') 
-                          : 'text-gray-400'}
-                        ${isDateInRange(day.date) && 'bg-green-400 text-white'}
-                      `}
-                    >
-                      {day.date.getDate()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Next month */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center bg-green-100 p-3 rounded-lg">
-                  <h3 className="font-semibold text-green-700">
-                    {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleString('default', { month: 'long' })} 
-                    {new Date(new Date().setMonth(new Date().getMonth() + 1)).getFullYear()}
-                  </h3>
-                </div>
-                <div className="grid grid-cols-7 gap-1">
-                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                    <div key={day} className="text-center text-sm text-green-600 font-medium p-1">
-                      {day}
-                    </div>
-                  ))}
-                  {generateCalendarDays(new Date().getMonth() + 1, new Date().getFullYear()).map((day, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleDateClick(day.date)}
-                      disabled={day.isDisabled}
-                      className={`
-                        p-2 text-sm rounded-lg transition-all
-                        ${day.isCurrentMonth ? 
-                          (isDateSelected(day.date) ? 'bg-green-600 text-white' : 'hover:bg-green-100 text-gray-600') 
-                          : 'text-gray-400'}
-                        ${isDateInRange(day.date) && 'bg-green-400 text-white'}
-                      `}
-                    >
-                      {day.date.getDate()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4 bg-green-50 p-4 rounded-xl">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-green-700">Selected period:</label>
-                <div className="font-semibold text-green-600">
-                  {dateFrom ? new Date(dateFrom).toLocaleDateString() : 'Not selected'} - 
-                  {dateTo ? new Date(dateTo).toLocaleDateString() : 'Not selected'}
-                </div>
-              </div>
-              <button 
-                onClick={() => { setDateFrom(''); setDateTo(''); }}
-                className="text-green-600 hover:text-green-700 text-sm font-medium"
-              >
-                Reset
-              </button>
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="w-full max-w-md mx-auto space-y-10 px-4">
-            <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
-              Enter number of working hours
-            </h2>
-
-            <div className="flex items-center justify-center gap-6">
-              <button
-                onClick={() => setNumberOfWorkingHours(prev => Math.max(1, prev - 1))}
-                className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
-              >
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                </svg>
-              </button>
-
-              <div className="text-center space-y-2">
-                <div className="text-6xl font-bold text-green-600">{numberOfWorkingHours}</div>
-              </div>
-
-              <button
-                onClick={() => setNumberOfWorkingHours(prev => Math.min(24, prev + 1))}
-                className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
-              >
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-6 pt-6">
-              <h3 className="text-lg font-semibold text-gray-700 text-center">Advice</h3>
-              
-              <div className="flex flex-col gap-4">
-                <div className="flex items-start gap-3 mx-auto">
-                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
-                  <div className="text-center">
-                    <p className="text-gray-600">
-                      8 hours is optimal<br /> 
-                    </p>
+        case 4:
+          return (
+            <div className="w-full max-w-4xl space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Current month */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center bg-green-100 p-3 rounded-lg">
+                    <h3 className="font-semibold text-green-700">
+                      {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                      <div key={day} className="text-center text-sm text-green-600 font-medium p-1">
+                        {day}
+                      </div>
+                    ))}
+                    {generateCalendarDays(new Date().getMonth(), new Date().getFullYear()).map((day, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleDateClick(day.date)}
+                        disabled={day.isDisabled}
+                        className={`
+                          p-2 text-sm rounded-lg transition-all
+                          ${day.isCurrentMonth ? 
+                            (isDateSelected(day.date) ? 'bg-green-600 text-white' : 'hover:bg-green-100 text-gray-600') 
+                            : 'text-gray-400'}
+                          ${isDateInRange(day.date) && 'bg-green-400 text-white'}
+                        `}
+                      >
+                        {day.date.getDate()}
+                      </button>
+                    ))}
                   </div>
                 </div>
-
-                <div className="flex items-start gap-3 mx-auto">
-                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
-                  <div className="text-center">
-                    <p className="text-gray-600">
-                      24 hours is maximum<br />
-                    </p>
+        
+                {/* Next month */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center bg-green-100 p-3 rounded-lg">
+                    <h3 className="font-semibold text-green-700">
+                      {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleString('default', { month: 'long' })} 
+                      {new Date(new Date().setMonth(new Date().getMonth() + 1)).getFullYear()}
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-7 gap-1">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                      <div key={day} className="text-center text-sm text-green-600 font-medium p-1">
+                        {day}
+                      </div>
+                    ))}
+                    {generateCalendarDays(new Date().getMonth() + 1, new Date().getFullYear()).map((day, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleDateClick(day.date)}
+                        disabled={day.isDisabled}
+                        className={`
+                          p-2 text-sm rounded-lg transition-all
+                          ${day.isCurrentMonth ? 
+                            (isDateSelected(day.date) ? 'bg-green-600 text-white' : 'hover:bg-green-100 text-gray-600') 
+                            : 'text-gray-400'}
+                          ${isDateInRange(day.date) && 'bg-green-400 text-white'}
+                        `}
+                      >
+                        {day.date.getDate()}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        );
-
-      case 6:
-        return (
-          <div className="w-full max-w-md mx-auto space-y-10 px-4">
-            <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
-              How many workers do you need?
-            </h2>
-
-            <div className="flex items-center justify-center gap-6">
-              <button
-                onClick={() => setNumberOfWorkers(prev => Math.max(1, prev - 1))}
-                className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
-              >
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                </svg>
-              </button>
-
-              <div className="text-center space-y-2">
-                <div className="text-6xl font-bold text-green-600">{numberOfWorkers}</div>
-              </div>
-
-              <button
-                onClick={() => setNumberOfWorkers(prev => Math.min(50, prev + 1))}
-                className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
-              >
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        );
-
-      case 7:
-        return (
-          <div className="w-full max-w-2xl mx-auto flex justify-center items-center h-full">
-            <div className="space-y-4 w-full">
-              <div className="space-y-2">
-                <label className="text-gray-600 font-medium">Type of Work</label>
-                <input
-                  type="text"
-                  value={typeOfWork}
-                  onChange={(e) => setTypeOfWork(e.target.value)}
-                  placeholder="Type of work (1 or 2 words, e.g., cleaning)"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-gray-600 font-medium">Description</label>
-                <textarea
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  placeholder="Describe the job, requirements, and any important information"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all h-48"
-                />
+        
+              <div className="grid md:grid-cols-2 gap-4 bg-green-50 p-4 rounded-xl">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-green-700">Selected period:</label>
+                  <div className="font-semibold text-green-600">
+                    {dateFrom ? new Date(dateFrom).toLocaleDateString() : 'Not selected'} - 
+                    {dateTo ? new Date(dateTo).toLocaleDateString() : 'Not selected'}
+                  </div>
+                </div>
+                <button 
+                  onClick={() => { setDateFrom(''); setDateTo(''); }}
+                  className="text-green-600 hover:text-green-700 text-sm font-medium"
+                >
+                  Reset
+                </button>
               </div>
             </div>
+          );
+
+          case 5:
+  return (
+    <div className="w-full max-w-md mx-auto space-y-10 px-4">
+      {/* Title */}
+      <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
+        Enter number of working hours
+      </h2>
+
+      {/* Counter with buttons */}
+      <div className="flex items-center justify-center gap-6">
+        <button
+          onClick={() => setNumberOfWorkingHours(prev => Math.max(1, prev - 1))}
+          className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
+        >
+          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+          </svg>
+        </button>
+
+        <div className="text-center space-y-2">
+          <div className="text-6xl font-bold text-green-600">{numberOfWorkingHours}</div>
+        </div>
+
+        <button
+          onClick={() => setNumberOfWorkingHours(prev => Math.min(24, prev + 1))}
+          className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
+        >
+          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Options */}
+      <div className="space-y-6 pt-6">
+        <h3 className="text-lg font-semibold text-gray-700 text-center">Advice</h3>
+        
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start gap-3 mx-auto">
+            <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+            <div className="text-center">
+              <p className="text-gray-600">
+                8 is hours optimal<br /> 
+              </p>
+            </div>
           </div>
-        );
+
+          <div className="flex items-start gap-3 mx-auto">
+            <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+            <div className="text-center">
+              <p className="text-gray-600">
+                24 hours is maximum<br />
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  ); 
+
+  case 6:
+    return (
+      <div className="w-full max-w-md mx-auto space-y-10 px-4">
+        {/* Title */}
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
+          How many workers do you need?
+        </h2>
+  
+        {/* Counter with buttons */}
+        <div className="flex items-center justify-center gap-6">
+          <button
+            onClick={() => setNumberOfWorkers(prev => Math.max(1, prev - 1))}
+            className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
+          >
+            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            </svg>
+          </button>
+  
+          <div className="text-center space-y-2">
+            <div className="text-6xl font-bold text-green-600">{numberOfWorkers}</div> 
+          </div>
+  
+          <button
+            onClick={() => setNumberOfWorkers(prev => Math.min(50, prev + 1))}
+            className="p-4 rounded-full bg-green-100 hover:bg-green-200 transition-colors shadow-sm"
+          >
+            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          </button>
+        </div>
+  
+        {/* Options */}
+        <div className="space-y-6 pt-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start gap-3 mx-auto">
+              <div className="text-center">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    case 7:
+      return (
+        <div className="w-full max-w-2xl mx-auto flex justify-center items-center h-full">
+          <div className="space-y-4 w-full">
+            {/* Type of Work Input */}
+            <div className="space-y-2">
+              <label className="text-gray-600 font-medium">Type of Work</label>
+              <input
+                type="text"
+                value={typeOfWork}
+                onChange={(e) => setTypeOfWork(e.target.value)}
+                placeholder="Type of work (1 or 2 words, e.g., cleaning)"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all"
+              />
+            </div>
+    
+            {/* Job Description Textarea */}
+            <div className="space-y-2">
+              <label className="text-gray-600 font-medium">Description</label>
+              <textarea
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Describe the job, requirements, and any important information"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all h-48"
+              />
+            </div>
+          </div>
+        </div>
+      );
 
       default:
         return null;
     }
   };
+
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-12">
