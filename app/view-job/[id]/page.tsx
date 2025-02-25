@@ -33,6 +33,11 @@ interface Job {
   date_to: string;
   hours_per_day: number;
   applicants?: string[];
+  accepted_applicants?: string[];
+}
+
+interface AdminData {
+  email: string;
 }
 
 const fadeInUp = {
@@ -50,46 +55,52 @@ export default function ViewJob() {
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [L, setL] = useState<any>(null);
+  const [leafletModule, setLeafletModule] = useState<typeof import('leaflet') | null>(null); // Use a separate variable for Leaflet
+  const [markerIcon, setMarkerIcon] = useState<L.Icon | null>(null); // Add markerIcon state
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const { id } = useParams();
   const router = useRouter();
 
+  // Initialize Leaflet and markerIcon
+  useEffect(() => {
+    import('leaflet').then((leaflet) => {
+      setLeafletModule(leaflet); // Set the Leaflet module
+      // Create markerIcon after Leaflet is initialized
+      const icon = new leaflet.Icon({
+        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
+        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+      });
+      setMarkerIcon(icon);
+    });
+  }, []);
+
+
   useEffect(() => {
     const checkIfAdmin = async () => {
       if (!currentUserEmail) return;
-  
       try {
-        // Fetch all emails from the admins table
-        const { data, error } = await supabase
-          .from("admins")
-          .select("email");
-  
+        const { data, error } = await supabase.from("admins").select("email");
         if (error) {
           console.error("Error fetching admin emails:", error);
-          setIsAdmin(false); // Ensure admin status is set to false on error
+          setIsAdmin(false);
           return;
         }
-  
-        // Check if any of the fetched emails match the current user's email
         const isAdmin = data.some(admin => admin.email === currentUserEmail);
-  
-        setIsAdmin(isAdmin); // Set isAdmin based on the match
+        setIsAdmin(isAdmin);
       } catch (err) {
         console.error("Unexpected error checking admin status:", err);
-        setIsAdmin(false); // Ensure admin status is set to false on unexpected error
+        setIsAdmin(false);
       }
     };
-  
     checkIfAdmin();
   }, [currentUserEmail]);
 
   useEffect(() => {
-    import('leaflet').then((leaflet) => {
-      setL(leaflet);
-    });
-
     const fetchJob = async () => {
       try {
         const { data, error } = await supabase
@@ -97,7 +108,6 @@ export default function ViewJob() {
           .select('*')
           .eq('id', id)
           .single();
-
         if (error) throw error;
         setJob(data);
       } catch (error) {
@@ -110,9 +120,7 @@ export default function ViewJob() {
 
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUserEmail(user.email || ""); // Ensures it is always a string
-      }
+      if (user) setCurrentUserEmail(user.email || "");
     };
 
     if (id) {
@@ -123,37 +131,76 @@ export default function ViewJob() {
 
   const handleBackToList = () => router.push('/find-jobs');
 
+  const handleRemoveAcceptedApplicant = async (index: number) => {
+    if (!job || !job.accepted_applicants || job.accepted_applicants.length <= index) return;
+    try {
+      const updatedAcceptedApplicants = job.accepted_applicants.filter((_, i) => i !== index);
+      const updatedBrojRadnika = job.broj_radnika + 1;
+  
+      const { error } = await supabase
+        .from('jobs')
+        .update({
+          accepted_applicants: updatedAcceptedApplicants,
+          broj_radnika: updatedBrojRadnika,
+        })
+        .eq('id', job.id);
+  
+      if (error) {
+        console.error("Supabase error details:", error);
+        alert(`Error: ${error.message}`);
+        return;
+      }
+  
+      setJob(prev => prev ? {
+        ...prev,
+        accepted_applicants: updatedAcceptedApplicants,
+        broj_radnika: updatedBrojRadnika,
+      } : null);
+  
+      alert('Accepted applicant removed successfully!');
+    } catch (error) {
+      console.error('Error removing accepted applicant:', error);
+      alert('Failed to remove accepted applicant. Please try again.');
+    }
+  };
+
   const handleAcceptApplicant = async (index: number) => {
     if (!job || !job.applicants || job.applicants.length <= index) return;
-  
     try {
-      // Decrement the number of available positions
+      const applicantName = job.applicants[index];
       const updatedBrojRadnika = job.broj_radnika - 1;
-  
-      // Remove the accepted applicant from the applicants array
       const updatedApplicants = job.applicants.filter((_, i) => i !== index);
+      const updatedAcceptedApplicants = Array.isArray(job.accepted_applicants)
+        ? [...job.accepted_applicants, applicantName]
+        : [applicantName];
   
-      // Update the job in Supabase
+      console.log("Updating job with:", {
+        broj_radnika: updatedBrojRadnika,
+        applicants: updatedApplicants,
+        accepted_applicants: updatedAcceptedApplicants
+      });
+  
       const { error } = await supabase
         .from('jobs')
         .update({
           broj_radnika: updatedBrojRadnika,
           applicants: updatedApplicants,
+          accepted_applicants: updatedAcceptedApplicants
         })
         .eq('id', job.id);
   
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error details:", error);
+        alert(`Error: ${error.message}`);
+        return;
+      }
   
-      // Update the local state
-      setJob((prev) =>
-        prev
-          ? {
-              ...prev,
-              broj_radnika: updatedBrojRadnika,
-              applicants: updatedApplicants,
-            }
-          : null
-      );
+      setJob(prev => prev ? {
+        ...prev,
+        broj_radnika: updatedBrojRadnika,
+        applicants: updatedApplicants,
+        accepted_applicants: updatedAcceptedApplicants
+      } : null);
   
       alert('Applicant accepted successfully!');
     } catch (error) {
@@ -161,34 +208,17 @@ export default function ViewJob() {
       alert('Failed to accept applicant. Please try again.');
     }
   };
-  
+
   const handleDeclineApplicant = async (index: number) => {
     if (!job || !job.applicants || job.applicants.length <= index) return;
-  
     try {
-      // Remove the declined applicant from the applicants array
       const updatedApplicants = job.applicants.filter((_, i) => i !== index);
-  
-      // Update the job in Supabase
       const { error } = await supabase
         .from('jobs')
-        .update({
-          applicants: updatedApplicants,
-        })
+        .update({ applicants: updatedApplicants })
         .eq('id', job.id);
-  
       if (error) throw error;
-  
-      // Update the local state
-      setJob((prev) =>
-        prev
-          ? {
-              ...prev,
-              applicants: updatedApplicants,
-            }
-          : null
-      );
-  
+      setJob(prev => prev ? { ...prev, applicants: updatedApplicants } : null);
       alert('Applicant declined successfully!');
     } catch (error) {
       console.error('Error declining applicant:', error);
@@ -198,58 +228,40 @@ export default function ViewJob() {
 
   const handleApplyForJob = async () => {
     if (!job || applying) return;
-  
     try {
       setApplying(true);
       const { data: { user } } = await supabase.auth.getUser();
-  
       if (!user) {
         router.push('/login');
         return;
       }
-  
       if (user.email === job.user_email) {
         alert('You cannot apply for your own job.');
         return;
       }
-  
       if (job.broj_radnika <= 0) {
         alert('No more workers needed for this job.');
         return;
       }
-  
-      // Get the applicant's name from the user metadata
       const applicantName = user.user_metadata?.name || 'Unknown Applicant';
-  
-      // Check if the user has already applied for this job
       if (job.applicants && job.applicants.includes(applicantName)) {
         alert('You have already applied for this job.');
         return;
       }
-  
-      // Update the job to decrement the worker count and add the applicant's name
       const { error } = await supabase
         .from('jobs')
-        .update({
-          broj_radnika: job.broj_radnika - 1,
-          applicants: [...(job.applicants || []), applicantName], // Add the applicant's name to the array
-        })
+        .update({ applicants: [...(job.applicants || []), applicantName] })
         .eq('id', job.id);
-  
       if (error) throw error;
-  
-      // Update the local state to reflect the changes
-      setJob(prev => prev ? {
-        ...prev,
-        broj_radnika: prev.broj_radnika - 1,
-        applicants: [...(prev.applicants || []), applicantName],
-      } : null);
-  
+      setJob(prev => prev ? { ...prev, applicants: [...(prev.applicants || []), applicantName] } : null);
       alert('Application successful! The job poster has been notified.');
-  
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Application failed:', error);
-      alert(error.message || 'Application failed. Please try again.');
+      if (error instanceof Error) {
+        alert(error.message || 'Application failed. Please try again.');
+      } else {
+        alert('Application failed. Please try again.');
+      }
     } finally {
       setApplying(false);
     }
@@ -257,28 +269,20 @@ export default function ViewJob() {
 
   const handleDeleteJob = async () => {
     if (!job || !currentUserEmail) return;
-
-    // Check if the user is an admin
-    const { data: adminData, error: adminError } = await supabase
+    const { data: adminData } = await supabase
       .from("admins")
       .select("email")
       .eq("email", currentUserEmail)
-      .single();
-
-    const isAdmin = !!adminData; // Returns true if the user is an admin
+      .single<AdminData>();
+    const isAdmin = !!adminData;
     const isJobPoster = currentUserEmail === job.user_email;
-
-    // Only job poster or admin can delete
     if (!isAdmin && !isJobPoster) {
       alert("You don't have permission to delete this job.");
       return;
     }
-
     try {
       const { error } = await supabase.from("jobs").delete().eq("id", job.id);
-
       if (error) throw error;
-
       alert("Job deleted successfully.");
       router.push("/find-jobs");
     } catch (error) {
@@ -296,10 +300,7 @@ export default function ViewJob() {
   if (error) return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col justify-center items-center text-red-600 gap-4">
       <div className="text-xl">{error}</div>
-      <button
-        onClick={handleBackToList}
-        className="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition-colors"
-      >
+      <button onClick={handleBackToList} className="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition-colors">
         Return to Job List
       </button>
     </div>
@@ -308,66 +309,28 @@ export default function ViewJob() {
   if (!job) return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col justify-center items-center gap-4">
       <div className="text-xl text-gray-700">Job not found</div>
-      <button
-        onClick={handleBackToList}
-        className="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition-colors"
-      >
+      <button onClick={handleBackToList} className="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition-colors">
         Return to Job List
       </button>
     </div>
   );
 
-  const markerIcon = L && new L.Icon({
-    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
-    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-  });
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       <section className="container mx-auto px-4 sm:px-6 py-12">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="max-w-4xl mx-auto"
-        >
-          {/* Header */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-4xl mx-auto">
           <div className="mb-12">
-            <motion.button
-              onClick={handleBackToList}
-              whileHover={{ scale: 1.05 }}
-              className="mb-8 flex items-center gap-2 text-green-600 hover:text-green-700"
-            >
+            <motion.button onClick={handleBackToList} whileHover={{ scale: 1.05 }} className="mb-8 flex items-center gap-2 text-green-600 hover:text-green-700">
               <FaArrowLeft className="w-5 h-5" />
               <span className="font-semibold">Back to Jobs</span>
             </motion.button>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 text-center"
-            >
-              <span className="bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
-                {job.grad}
-              </span>
+            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 text-center">
+              <span className="bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">{job.grad}</span>
             </motion.h1>
           </div>
 
-          {/* Main Content */}
-          <motion.div
-            variants={staggerVariants}
-            initial="hidden"
-            animate="visible"
-            className="grid md:grid-cols-2 gap-8"
-          >
-            {/* Job Details */}
-            <motion.div
-              variants={fadeInUp}
-              className="p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 space-y-6"
-            >
+          <motion.div variants={staggerVariants} initial="hidden" animate="visible" className="grid md:grid-cols-2 gap-8">
+            <motion.div variants={fadeInUp} className="p-8 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-green-100 rounded-lg">
@@ -376,35 +339,26 @@ export default function ViewJob() {
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">
                       {job.dnevnica}€
-                      <span className="text-lg text-gray-600 ml-2">
-                        ({job.wage_type.toLowerCase()})
-                      </span>
+                      <span className="text-lg text-gray-600 ml-2">({job.wage_type.toLowerCase()})</span>
                     </h3>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 bg-green-50 rounded-xl">
                     <div className="flex items-center gap-2 text-green-600">
                       <FaUsers className="w-5 h-5" />
                       <span className="font-semibold">Positions Left</span>
                     </div>
-                    <div className="text-3xl font-bold text-gray-900 mt-2">
-                      {job.broj_radnika}
-                    </div>
+                    <div className="text-3xl font-bold text-gray-900 mt-2">{job.broj_radnika}</div>
                   </div>
-
                   <div className="p-4 bg-green-50 rounded-xl">
                     <div className="flex items-center gap-2 text-green-600">
                       <FaCalendarAlt className="w-5 h-5" />
                       <span className="font-semibold">Posted</span>
                     </div>
-                    <div className="text-gray-900 mt-2">
-                      {new Date(job.created_at).toLocaleDateString()}
-                    </div>
+                    <div className="text-gray-900 mt-2">{new Date(job.created_at).toLocaleDateString()}</div>
                   </div>
                 </div>
-
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-green-100 rounded-lg">
@@ -415,7 +369,6 @@ export default function ViewJob() {
                       <p className="text-gray-600">{job.adresa}</p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-green-100 rounded-lg">
                       <FaPhoneAlt className="w-6 h-6 text-green-600" />
@@ -425,7 +378,6 @@ export default function ViewJob() {
                       <p className="text-gray-600">{job.broj_telefona}</p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-green-100 rounded-lg">
                       <FaEnvelope className="w-6 h-6 text-green-600" />
@@ -435,7 +387,6 @@ export default function ViewJob() {
                       <p className="text-gray-600 break-all">{job.user_email}</p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-green-100 rounded-lg">
                       <FaCalendarAlt className="w-6 h-6 text-green-600" />
@@ -447,7 +398,6 @@ export default function ViewJob() {
                       </p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-green-100 rounded-lg">
                       <FaUsers className="w-6 h-6 text-green-600" />
@@ -459,115 +409,112 @@ export default function ViewJob() {
                   </div>
                 </div>
               </div>
-
               <div className="border-t border-gray-200 pt-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Job Description</h3>
-                <p className="text-gray-600 leading-relaxed whitespace-pre-line">
-                  {job.opis}
-                </p>
+                <p className="text-gray-600 leading-relaxed whitespace-pre-line">{job.opis}</p>
               </div>
             </motion.div>
 
-            {/* Map Section */}
-            <motion.div
-              style={{ zIndex: 0 }}
-              variants={fadeInUp}
-              className="h-full w-full rounded-2xl overflow-hidden shadow-xl border border-gray-100"
-            >
-              {job.latitude && job.longitude && L && (
-                <MapContainer
-                  center={[job.latitude, job.longitude]}
-                  zoom={15}
-                  style={{ height: '100%', width: '100%' }}
-                  scrollWheelZoom={false}
-                >
+            <motion.div style={{ zIndex: 0 }} variants={fadeInUp} className="h-full w-full rounded-2xl overflow-hidden shadow-xl border border-gray-100">
+              {job.latitude && job.longitude && leafletModule && markerIcon && (
+                <MapContainer center={[job.latitude, job.longitude]} zoom={15} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
                   <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
                   <Marker position={[job.latitude, job.longitude]} icon={markerIcon}>
-                    <Popup className="text-sm font-semibold">
-                      {job.grad}, {job.adresa}
-                    </Popup>
+                    <Popup className="text-sm font-semibold">{job.grad}, {job.adresa}</Popup>
                   </Marker>
                 </MapContainer>
               )}
             </motion.div>
           </motion.div>
 
-          {/* Applicants Table (Conditional) */}
           {currentUserEmail && currentUserEmail === job.user_email && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-12"
-            >
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Applicants</h3>
-              {job.applicants && job.applicants.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full bg-white rounded-lg shadow-lg border border-gray-100">
-                    <thead className="bg-green-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                          Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                          Applied On
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {job.applicants.map((applicant, index) => (
-                        <tr key={index} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {applicant}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {new Date(job.created_at).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleAcceptApplicant(index)}
-                                className="p-1.5 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
-                                title="Accept"
-                              >
-                                ✔️
-                              </button>
-                              <button
-                                onClick={() => handleDeclineApplicant(index)}
-                                className="p-1.5 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
-                                title="Decline"
-                              >
-                                🛇
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-gray-600">No applicants yet.</p>
-              )}
-            </motion.div>
-          )}
+  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-12">
+    <h3 className="text-2xl font-bold text-gray-900 mb-6">Applicants</h3>
+    {job.applicants && job.applicants.length > 0 ? (
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white rounded-lg shadow-lg border border-green-600 overflow-hidden">
+          <thead className="bg-green-600 rounded-t-lg">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Applied On</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {job.applicants.map((applicant, index) => (
+              <tr key={index} className="hover:bg-green-50 transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{applicant}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{new Date(job.created_at).toLocaleDateString()}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleAcceptApplicant(index)}
+                      className="p-1.5 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
+                      title="Accept"
+                    >
+                      <span role="img" aria-label="Accept">✔️</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeclineApplicant(index)}
+                      className="p-1.5 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+                      title="Decline"
+                    >
+                      <span role="img" aria-label="Decline">🛇</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <p className="text-gray-600">No applicants yet.</p>
+    )}
 
-          {/* Apply Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-12 text-center"
-          >
-            <button
-              onClick={handleApplyForJob}
-              disabled={applying || job.broj_radnika <= 0}
-              className="bg-gradient-to-br from-green-600 to-emerald-500 text-white px-12 py-4 rounded-full text-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+<h3 className="text-2xl font-bold text-gray-900 mt-12 mb-6">Accepted Applicants</h3>
+{job.accepted_applicants && job.accepted_applicants.length > 0 ? (
+  <div className="overflow-x-auto">
+    <table className="min-w-full bg-white rounded-lg shadow-lg border border-green-600 overflow-hidden">
+      <thead className="bg-green-600 rounded-t-lg">
+        <tr>
+          <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Name</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Accepted On</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-gray-200">
+        {job.accepted_applicants.map((applicant, index) => (
+          <tr key={index} className="hover:bg-green-50 transition-colors">
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{applicant}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{new Date().toLocaleDateString()}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleRemoveAcceptedApplicant(index)}
+                  className="p-1.5 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+                  title="Remove"
+                >
+                  <span role="img" aria-label="Remove">🗑️</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+) : (
+  <p className="text-gray-600">No accepted applicants yet.</p>
+)}
+  </motion.div>
+)}
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-12 text-center">
+            <button onClick={handleApplyForJob} disabled={applying || job.broj_radnika <= 0} className="bg-gradient-to-br from-green-600 to-emerald-500 text-white px-12 py-4 rounded-full text-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
               {applying ? (
                 <div className="flex items-center gap-2">
                   <Spinner className="w-5 h-5 text-current" />
@@ -577,22 +524,12 @@ export default function ViewJob() {
                 `Apply Now ${job.broj_radnika > 0 ? `(${job.broj_radnika} positions left)` : ''}`
               )}
             </button>
-            {job.broj_radnika <= 0 && (
-              <p className="text-red-600 mt-2">This position is no longer available</p>
-            )}
+            {job.broj_radnika <= 0 && <p className="text-red-600 mt-2">This position is no longer available</p>}
           </motion.div>
 
-          {/* Delete Button (Conditional) */}
           {currentUserEmail && (currentUserEmail === job.user_email || isAdmin) && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-6 text-center"
-            >
-              <button
-                onClick={handleDeleteJob}
-                className="bg-red-600 text-white px-12 py-4 rounded-full text-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2"
-              >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-6 text-center">
+              <button onClick={handleDeleteJob} className="bg-red-600 text-white px-12 py-4 rounded-full text-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2">
                 <FaTrash className="w-5 h-5" />
                 Delete Job
               </button>

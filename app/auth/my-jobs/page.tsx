@@ -67,7 +67,7 @@ export default function MyJobsPage() {
               </span>
             </motion.h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Here are the jobs you've posted
+              Here are the jobs you&apos;ve posted
             </p>
           </div>
 

@@ -5,15 +5,17 @@ import supabase from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FaMapMarkerAlt, FaCalendarAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
 import { Spinner } from '@/components/ui/spinner';
+import { Suspense } from 'react';
 
 interface Job {
-  vrsta_posla: string;
+  vrsta_posla: ReactNode;
   id: string;
   grad: string;
   adresa: string;
   dnevnica: number;
   wage_type: string;
   created_at: string;
+  broj_radnika: number; // Add this line
 }
 
 const fadeInUp = {
@@ -34,20 +36,15 @@ export default function FindJobs() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const parseNumberParam = (param: string | null, defaultValue: number): number => {
-    if (param === null) return defaultValue;
-    const parsed = parseFloat(param);
-    return isNaN(parsed) ? defaultValue : parsed;
-  };
-
   // Query parameters extraction
   const city = searchParams.get('city') || '';
   const wageType = searchParams.get('wageType') || '';
-  const wageFrom = parseNumberParam(searchParams.get('wageFrom'), 0);
-  const wageTo = parseNumberParam(searchParams.get('wageTo'), Infinity);
+  const wageFrom = parseFloat(searchParams.get('wageFrom') || '0');
+  const wageTo = parseFloat(searchParams.get('wageTo') || 'Infinity');
   const dateFrom = searchParams.get('dateFrom') || '';
   const dateTo = searchParams.get('dateTo') || '';
-  const vrsta_poslaFilter = searchParams.get('vrsta_posla');
+  const vrsta_posla = searchParams.get('vrsta_posla');
+
   // Sorting and filtering logic
   const sortedJobs = [...jobs].sort((a, b) => {
     const dateA = new Date(a.created_at).getTime();
@@ -60,12 +57,10 @@ export default function FindJobs() {
     const matchesCity = city ? job.grad.toLowerCase().includes(city.toLowerCase()) : true;
     const matchesWageType = wageType ? job.wage_type.toLowerCase() === wageType.toLowerCase() : true;
     const matchesWageRange = job.dnevnica >= wageFrom && job.dnevnica <= wageTo;
-    const matchesDateRange = (!dateFrom || jobDate >= dateFrom) && (!dateTo || jobDate <= dateTo);
-    const matchesVrstaPosla = vrsta_poslaFilter 
-      ? job.vrsta_posla.toLowerCase() === vrsta_poslaFilter.toLowerCase() 
-      : true;
+    const matchesDateRange =
+      (!dateFrom || jobDate >= dateFrom) && (!dateTo || jobDate <= dateTo);
 
-    return matchesCity && matchesWageType && matchesWageRange && matchesDateRange && matchesVrstaPosla;
+    return matchesCity && matchesWageType && matchesWageRange && matchesDateRange;
   });
 
   useEffect(() => {
@@ -73,7 +68,7 @@ export default function FindJobs() {
       try {
         const { data, error } = await supabase
           .from('jobs')
-          .select('id, grad, adresa, dnevnica, wage_type, created_at, vrsta_posla');
+          .select('id, grad, adresa, dnevnica, wage_type, created_at, vrsta_posla, broj_radnika'); // Add broj_radnika here
 
         if (error) throw error;
         setJobs(data?.filter((job) => job.id) || []);
@@ -105,6 +100,7 @@ export default function FindJobs() {
   }
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       <section className="container mx-auto px-4 sm:px-6 py-16">
         <motion.div
@@ -160,10 +156,15 @@ export default function FindJobs() {
               <motion.div
                 key={job.id}
                 variants={fadeInUp}
-                whileHover={{ scale: 1.02 }}
-                className="p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-100 cursor-pointer"
-                onClick={() => router.push(`/view-job/${job.id}`)}
+                whileHover={{ scale: job.broj_radnika > 0 ? 1.02 : 1 }}
+                className={`p-6 ${job.broj_radnika === 0 ? 'bg-gray-200' : 'bg-white/90'} backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-100 cursor-pointer`}
+                onClick={() => job.broj_radnika > 0 && router.push(`/view-job/${job.id}`)}
               >
+                {job.broj_radnika === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-200/90 rounded-2xl">
+                    <span className="text-2xl font-bold text-gray-600 -rotate-45">Popunjeno</span>
+                  </div>
+                )}
                 <div className="mb-4 flex items-center justify-between">
                   <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
                     {'Job offer'}
@@ -241,5 +242,6 @@ export default function FindJobs() {
         </div>
       </motion.section>
     </div>
+    </Suspense>
   );
 }

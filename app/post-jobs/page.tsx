@@ -271,6 +271,7 @@ const PostJob = () => {
   }, []); // Empty dependency array ensures this runs only onc
 
   const submitJob = async (user: any) => {
+    //await new Promise((resolve) => setTimeout(resolve, 3000));
     const jobData = {
       grad: selectedCity?.city || '',
       adresa: location,
