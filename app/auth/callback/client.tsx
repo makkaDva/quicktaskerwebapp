@@ -12,8 +12,11 @@ export default function AuthCallback() {
   );
 
   useEffect(() => {
+    // Ensure this code only runs on the client side
+    if (typeof window === 'undefined') return;
+
     let messageSent = false;
-  
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === "SIGNED_IN" && !messageSent) {
         if (window.opener) {
@@ -25,7 +28,7 @@ export default function AuthCallback() {
         }
       }
     });
-  
+
     const timeout = setTimeout(() => {
       if (!messageSent && window.opener) {
         window.opener.postMessage('login-timeout', window.location.origin);
