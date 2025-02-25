@@ -1,14 +1,16 @@
 "use client";
+
 import { motion } from 'framer-motion';
 import { MapPin, Phone, Wallet, Calendar, Clock, Users, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import supabase from '@/lib/supabase';
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import dynamic from 'next/dynamic';
-import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useRouter } from 'next/navigation';
+import L from 'leaflet';
 
+// Dynamically import Leaflet components with no SSR
 const MapContainer = dynamic(
   () => import('react-leaflet').then((mod) => mod.MapContainer),
   { 
@@ -24,10 +26,7 @@ const TileLayer = dynamic(
 
 const Marker = dynamic(
   () => import('react-leaflet').then((mod) => mod.Marker),
-  { 
-    ssr: false,
-    loading: () => null
-  }
+  { ssr: false }
 );
 
 const Popup = dynamic(
@@ -35,22 +34,40 @@ const Popup = dynamic(
   { ssr: false }
 );
 
-const markerIcon = L && new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-  className: 'animate-bounce-marker'
-});
+// Custom marker icon component that uses Leaflet only on the client side
+const MarkerIcon = () => {
+  const [icon, setIcon] = useState<L.Icon | null>(null);
+  
+  useEffect(() => {
+    // Import L only on client side
+    import('leaflet').then((L) => {
+      return setIcon(
+        new L.Icon({
+          iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+          shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41],
+          className: 'animate-bounce-marker'
+        })
+      );
+    });
+    
+    return () => {
+      setIcon(null);
+    };
+  }, []);
+  
+  return icon;
+};
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
-const countryCodes: { [key: string]: string } = {
+const countryCodes = {
   Albania: '+355',
   Andorra: '+376',
   Armenia: '+374',
@@ -132,10 +149,71 @@ const PostJob = () => {
   const [numberOfWorkers, setNumberOfWorkers] = useState(1);
   const [jobDescription, setJobDescription] = useState('');
   const [typeOfWork, setTypeOfWork] = useState('');
+  
+  const [markerIcon, setMarkerIcon] = useState<L.Icon | null>(null);
+
+  // Initialize the marker icon on the client side
+  useEffect(() => {
+    import('leaflet').then((L) => {
+      setMarkerIcon(
+        new L.Icon({
+          iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+          shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41],
+          className: 'animate-bounce-marker'
+        })
+      );
+    });
+  }, []);
 
   useEffect(() => {
     if (location && location.length >= 3) fetchSuggestions(location);
   }, [location]);
+
+  // Safely add event listener only on client side
+  useEffect(() => {
+    const handleMessage = async (event: { data: string; }) => {
+      console.log('Message received:', event.data);
+      
+      if (event.data === 'login-success') {
+        console.log('Login success message received');
+        
+        // Get the authenticated user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          alert('Login failed. Please try again.');
+          return;
+        }
+  
+        try {
+          // Use the submitJob function to post the job
+          await submitJob(user);
+        } catch (error) {
+          alert('An error occurred while posting the job.');
+        }
+      }
+    };
+  
+    // Add the event listener for messages - only on client side
+    if (typeof window !== 'undefined') {
+      window.addEventListener('message', handleMessage);
+    }
+  
+    // Cleanup the event listener on unmount
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('message', handleMessage);
+      }
+    };
+  }, [
+    location, selectedCity, phoneNumber, countryCode, wage, 
+    wageType, dateFrom, dateTo, numberOfWorkingHours, 
+    numberOfWorkers, jobDescription, typeOfWork
+  ]);
 
   const fetchSuggestions = async (query: string) => {
     setIsLoading(true);
@@ -230,48 +308,7 @@ const PostJob = () => {
     setStep(prev => Math.max(1, prev - 1));
   };
 
-  const isSubmitting = useRef(false);
-
-  useEffect(() => {
-    const handleMessage = async (event: MessageEvent) => {
-      console.log('Message received:', event.data); // Debugging line
-      //if (event.origin !== window.location.origin || isSubmitting.current) return;
-  
-      if (event.data === 'login-success') {
-        console.log('Login success message received'); // Debugging line
-        isSubmitting.current = true;
-  
-        // Get the authenticated user
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          alert('Login failed. Please try again.');
-          isSubmitting.current = false;
-          return;
-        }
-  
-        try {
-          // Use the submitJob function to post the job
-          await submitJob(user);
-        } catch (error) {
-          alert('An error occurred while posting the job.');
-        } finally {
-          isSubmitting.current = false;
-        }
-      }
-    };
-  
-    // Add the event listener for messages
-    window.addEventListener('message', handleMessage);
-  
-    // Cleanup the event listener on unmount
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, []); // Empty dependency array ensures this runs only onc
-
   const submitJob = async (user: any) => {
-    //await new Promise((resolve) => setTimeout(resolve, 3000));
     const jobData = {
       grad: selectedCity?.city || '',
       adresa: location,
@@ -287,7 +324,7 @@ const PostJob = () => {
       date_to: dateTo,
       drzava: selectedCity?.country || '',
       hours_per_day: numberOfWorkingHours,
-      vrsta_posla: typeOfWork // Add the new field
+      vrsta_posla: typeOfWork
     };
 
     const { error } = await supabase.from('jobs').insert(jobData);
@@ -296,7 +333,6 @@ const PostJob = () => {
     alert('Job posted successfully!');
     resetForm();
     router.push('/find-jobs');
-    //window.location.reload();
   };
 
   const resetForm = () => {
@@ -314,30 +350,21 @@ const PostJob = () => {
 
   const handleFinish = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    if (isSubmitting.current) return;
-  
+    
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      isSubmitting.current = true;
-      window.open('/login', '_blank', 'width=500,height=600');
+      // Only open a new window on the client side
+      if (typeof window !== 'undefined') {
+        window.open('/login', '_blank', 'width=500,height=600');
+      }
       return;
     }
   
     try {
-      isSubmitting.current = true;
-      
-      // Use the submitJob function instead of direct submission
       await submitJob(user);
-  
-      //alert('Job posted successfully!');
-      resetForm();
-      //router.push('/find-jobs');
-    
     } catch (error) {
       alert('An error occurred while posting the job.');
-    } finally {
-      isSubmitting.current = false;
     }
   };
 
@@ -430,30 +457,32 @@ const PostJob = () => {
               )}
             </div>
             <div className="h-[400px] rounded-2xl overflow-hidden border border-gray-200">
-              <MapContainer
-                key={selectedCity ? `${selectedCity.lat}-${selectedCity.lng}` : 'default-map'}
-                center={selectedCity ? [selectedCity.lat, selectedCity.lng] : [44.7866, 20.4489]}
-                zoom={selectedCity ? 13 : 5}
-                className="h-full w-full"
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                {selectedCity && (
-                  <Marker 
-                    position={[selectedCity.lat, selectedCity.lng]} 
-                    icon={markerIcon}
-                  >
-                    <Popup className="custom-popup" closeButton={false}>
-                      <div className="font-semibold text-green-600">
-                        <MapPin className="inline mr-2" size={18} />
-                        {selectedCity.city}
-                      </div>
-                    </Popup>
-                  </Marker>
-                )}
-              </MapContainer>
+              {typeof window !== 'undefined' && (
+                <MapContainer
+                  key={selectedCity ? `${selectedCity.lat}-${selectedCity.lng}` : 'default-map'}
+                  center={selectedCity ? [selectedCity.lat, selectedCity.lng] : [44.7866, 20.4489]}
+                  zoom={selectedCity ? 13 : 5}
+                  className="h-full w-full"
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  {selectedCity && markerIcon && (
+                    <Marker 
+                      position={[selectedCity.lat, selectedCity.lng]} 
+                      icon={markerIcon}
+                    >
+                      <Popup className="custom-popup" closeButton={false}>
+                        <div className="font-semibold text-green-600">
+                          <MapPin className="inline mr-2" size={18} />
+                          {selectedCity.city}
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )}
+                </MapContainer>
+              )}
             </div>
           </div>
         );
@@ -514,7 +543,7 @@ const PostJob = () => {
           return (
             <div className="w-full max-w-4xl space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
-                {/* Trenutni mesec */}
+                {/* Current month */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center bg-green-100 p-3 rounded-lg">
                     <h3 className="font-semibold text-green-700">
@@ -546,7 +575,7 @@ const PostJob = () => {
                   </div>
                 </div>
         
-                {/* Sledeći mesec */}
+                {/* Next month */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center bg-green-100 p-3 rounded-lg">
                     <h3 className="font-semibold text-green-700">
@@ -582,10 +611,10 @@ const PostJob = () => {
         
               <div className="grid md:grid-cols-2 gap-4 bg-green-50 p-4 rounded-xl">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-green-700">Odabrani period:</label>
+                  <label className="text-sm font-medium text-green-700">Selected period:</label>
                   <div className="font-semibold text-green-600">
-                    {dateFrom ? new Date(dateFrom).toLocaleDateString() : 'Nije izabrano'} - 
-                    {dateTo ? new Date(dateTo).toLocaleDateString() : 'Nije izabrano'}
+                    {dateFrom ? new Date(dateFrom).toLocaleDateString() : 'Not selected'} - 
+                    {dateTo ? new Date(dateTo).toLocaleDateString() : 'Not selected'}
                   </div>
                 </div>
                 <button 
@@ -601,12 +630,12 @@ const PostJob = () => {
           case 5:
   return (
     <div className="w-full max-w-md mx-auto space-y-10 px-4">
-      {/* Naslov */}
+      {/* Title */}
       <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
         Enter number of working hours
       </h2>
 
-      {/* Brojač sa dugmadima */}
+      {/* Counter with buttons */}
       <div className="flex items-center justify-center gap-6">
         <button
           onClick={() => setNumberOfWorkingHours(prev => Math.max(1, prev - 1))}
@@ -619,7 +648,6 @@ const PostJob = () => {
 
         <div className="text-center space-y-2">
           <div className="text-6xl font-bold text-green-600">{numberOfWorkingHours}</div>
-          {/* <span className="text-gray-500 text-sm block">maksimalno</span> */}
         </div>
 
         <button
@@ -632,7 +660,7 @@ const PostJob = () => {
         </button>
       </div>
 
-      {/* Opcije */}
+      {/* Options */}
       <div className="space-y-6 pt-6">
         <h3 className="text-lg font-semibold text-gray-700 text-center">Advice</h3>
         
@@ -651,25 +679,23 @@ const PostJob = () => {
             <div className="text-center">
               <p className="text-gray-600">
                 24 hours is maximum<br />
-                
               </p>
             </div>
           </div>
         </div>
       </div>
-
     </div>
   ); 
 
   case 6:
     return (
       <div className="w-full max-w-md mx-auto space-y-10 px-4">
-        {/* Naslov */}
+        {/* Title */}
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
           How many workers do you need?
         </h2>
   
-        {/* Brojač sa dugmadima */}
+        {/* Counter with buttons */}
         <div className="flex items-center justify-center gap-6">
           <button
             onClick={() => setNumberOfWorkers(prev => Math.max(1, prev - 1))}
@@ -694,14 +720,11 @@ const PostJob = () => {
           </button>
         </div>
   
-        {/* Opcije */}
+        {/* Options */}
         <div className="space-y-6 pt-6">
-          
           <div className="flex flex-col gap-4">
-  
             <div className="flex items-start gap-3 mx-auto">
               <div className="text-center">
-
               </div>
             </div>
           </div>
