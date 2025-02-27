@@ -15,6 +15,9 @@ interface Job {
   dnevnica: number;
   wage_type: string;
   created_at: string;
+  date_to: string;
+  broj_radnika: number;
+  user_email: string; // Added user_email to the Job interface
 }
 
 const fadeInUp = {
@@ -32,6 +35,7 @@ function FindJobsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState<'newest' | 'oldest'>('newest');
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -42,6 +46,58 @@ function FindJobsContent() {
   const wageTo = parseFloat(searchParams.get('wageTo') || 'Infinity');
   const dateFrom = searchParams.get('dateFrom') || '';
   const dateTo = searchParams.get('dateTo') || '';
+
+  // Fetch user email on component mount
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        if (user.email) {
+          setUserEmail(user.email);
+        }
+      }
+    };
+
+    fetchUserEmail();
+  }, []);
+
+  // Fetch jobs and filter out expired ones
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('id, grad, adresa, dnevnica, wage_type, created_at, vrsta_posla, date_to, broj_radnika, user_email');
+
+        if (error) throw error;
+
+        // Filter out jobs where date_to has passed
+        const currentDate = new Date().toISOString().split('T')[0];
+        const validJobs = data?.filter((job) => job.date_to >= currentDate) || [];
+
+        // Update jobs state
+        setJobs(validJobs);
+
+        // Delete expired jobs from the database
+        const expiredJobs = data?.filter((job) => job.date_to < currentDate) || [];
+        if (expiredJobs.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('jobs')
+            .delete()
+            .in('id', expiredJobs.map((job) => job.id));
+
+          if (deleteError) throw deleteError;
+        }
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+        setError('Failed to fetch jobs. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
 
   // Sorting and filtering logic
   const sortedJobs = [...jobs].sort((a, b) => {
@@ -60,26 +116,6 @@ function FindJobsContent() {
 
     return matchesCity && matchesWageType && matchesWageRange && matchesDateRange;
   });
-
-  useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('jobs')
-          .select('id, grad, adresa, dnevnica, wage_type, created_at, vrsta_posla');
-
-        if (error) throw error;
-        setJobs(data?.filter((job) => job.id) || []);
-      } catch (error) {
-        console.error('Error fetching jobs:', error);
-        setError('Failed to fetch jobs. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchJobs();
-  }, []);
 
   if (loading) {
     return (
@@ -153,10 +189,25 @@ function FindJobsContent() {
               <motion.div
                 key={job.id}
                 variants={fadeInUp}
-                whileHover={{ scale: 1.02 }}
-                className="p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-100 cursor-pointer"
-                onClick={() => router.push(`/view-job/${job.id}`)}
+                whileHover={{ scale: job.broj_radnika === 0 ? 1 : 1.02 }}
+                className={`p-6 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-100 cursor-pointer relative ${
+                  job.broj_radnika === 0 ? 'opacity-70 hover:bg-gray-100' : ''
+                }`}
+                onClick={() => {
+                  if (job.broj_radnika === 0 && userEmail === job.user_email) {
+                    router.push(`/view-job/${job.id}`);
+                  } else if (job.broj_radnika !== 0) {
+                    router.push(`/view-job/${job.id}`);
+                  }
+                }}
               >
+                {job.broj_radnika === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-2xl">
+                    <span className="text-2xl font-bold text-gray-500 transform -rotate-45">
+                      Popunjeno
+                    </span>
+                  </div>
+                )}
                 <div className="mb-4 flex items-center justify-between">
                   <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
                     {'Job offer'}

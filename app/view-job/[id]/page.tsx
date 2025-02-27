@@ -33,6 +33,7 @@ interface Job {
   date_to: string;
   hours_per_day: number;
   applicants?: string[];
+  accepted_applicants?: string[];
 }
 
 interface AdminData {
@@ -54,18 +55,18 @@ export default function ViewJob() {
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [leafletModule, setLeafletModule] = useState<typeof import('leaflet') | null>(null); // Use a separate variable for Leaflet
-  const [markerIcon, setMarkerIcon] = useState<L.Icon | null>(null); // Add markerIcon state
+  const [leafletModule, setLeafletModule] = useState<typeof import('leaflet') | null>(null);
+  const [markerIcon, setMarkerIcon] = useState<L.Icon | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
   const { id } = useParams();
   const router = useRouter();
 
   // Initialize Leaflet and markerIcon
   useEffect(() => {
     import('leaflet').then((leaflet) => {
-      setLeafletModule(leaflet); // Set the Leaflet module
-      // Create markerIcon after Leaflet is initialized
+      setLeafletModule(leaflet);
       const icon = new leaflet.Icon({
         iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
         shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
@@ -77,7 +78,6 @@ export default function ViewJob() {
       setMarkerIcon(icon);
     });
   }, []);
-
 
   useEffect(() => {
     const checkIfAdmin = async () => {
@@ -134,17 +134,37 @@ export default function ViewJob() {
     if (!job || !job.applicants || job.applicants.length <= index) return;
     try {
       const updatedBrojRadnika = job.broj_radnika - 1;
+      const applicant = job.applicants[index];
       const updatedApplicants = job.applicants.filter((_, i) => i !== index);
+      const updatedAcceptedApplicants = [...(job.accepted_applicants || []), applicant];
       const { error } = await supabase
         .from('jobs')
-        .update({ broj_radnika: updatedBrojRadnika, applicants: updatedApplicants })
+        .update({ broj_radnika: updatedBrojRadnika, applicants: updatedApplicants, accepted_applicants: updatedAcceptedApplicants })
         .eq('id', job.id);
       if (error) throw error;
-      setJob(prev => prev ? { ...prev, broj_radnika: updatedBrojRadnika, applicants: updatedApplicants } : null);
+      setJob(prev => prev ? { ...prev, broj_radnika: updatedBrojRadnika, applicants: updatedApplicants, accepted_applicants: updatedAcceptedApplicants } : null);
       alert('Applicant accepted successfully!');
     } catch (error) {
       console.error('Error accepting applicant:', error);
       alert('Failed to accept applicant. Please try again.');
+    }
+  };
+
+  const handleRemoveAcceptedApplicant = async (index: number) => {
+    if (!job || !job.accepted_applicants || job.accepted_applicants.length <= index) return;
+    try {
+      const updatedBrojRadnika = job.broj_radnika + 1;
+      const updatedAcceptedApplicants = job.accepted_applicants.filter((_, i) => i !== index);
+      const { error } = await supabase
+        .from('jobs')
+        .update({ broj_radnika: updatedBrojRadnika, accepted_applicants: updatedAcceptedApplicants })
+        .eq('id', job.id);
+      if (error) throw error;
+      setJob(prev => prev ? { ...prev, broj_radnika: updatedBrojRadnika, accepted_applicants: updatedAcceptedApplicants } : null);
+      alert('Applicant removed successfully!');
+    } catch (error) {
+      console.error('Error removing applicant:', error);
+      alert('Failed to remove applicant. Please try again.');
     }
   };
 
@@ -171,7 +191,7 @@ export default function ViewJob() {
       setApplying(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/login');
+        setShowLoginPopup(true);
         return;
       }
       if (user.email === job.user_email) {
@@ -189,7 +209,7 @@ export default function ViewJob() {
       }
       const { error } = await supabase
         .from('jobs')
-        .update({ broj_radnika: job.broj_radnika - 1, applicants: [...(job.applicants || []), applicantName] })
+        .update({  applicants: [...(job.applicants || []), applicantName] })
         .eq('id', job.id);
       if (error) throw error;
       setJob(prev => prev ? { ...prev, broj_radnika: prev.broj_radnika - 1, applicants: [...(prev.applicants || []), applicantName] } : null);
@@ -357,7 +377,7 @@ export default function ViewJob() {
             <motion.div style={{ zIndex: 0 }} variants={fadeInUp} className="h-full w-full rounded-2xl overflow-hidden shadow-xl border border-gray-100">
               {job.latitude && job.longitude && leafletModule && markerIcon && (
                 <MapContainer center={[job.latitude, job.longitude]} zoom={15} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
-                  <TileLayer
+                                    <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
@@ -370,51 +390,85 @@ export default function ViewJob() {
           </motion.div>
 
           {currentUserEmail && currentUserEmail === job.user_email && (
-  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-12">
-    <h3 className="text-2xl font-bold text-gray-900 mb-6">Applicants</h3>
-    {job.applicants && job.applicants.length > 0 ? (
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white rounded-lg shadow-lg border border-green-600 overflow-hidden">
-          <thead className="bg-green-600 rounded-t-lg">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Applied On</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {job.applicants.map((applicant, index) => (
-              <tr key={index} className="hover:bg-green-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{applicant}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{new Date(job.created_at).toLocaleDateString()}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleAcceptApplicant(index)}
-                      className="p-1.5 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
-                      title="Accept"
-                    >
-                      <span role="img" aria-label="Accept">✔️</span>
-                    </button>
-                    <button
-                      onClick={() => handleDeclineApplicant(index)}
-                      className="p-1.5 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
-                      title="Decline"
-                    >
-                      <span role="img" aria-label="Decline">🛇</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    ) : (
-      <p className="text-gray-600">No applicants yet.</p>
-    )}
-  </motion.div>
-)}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-12">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Applicants</h3>
+              {job.applicants && job.applicants.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-white rounded-lg shadow-lg border border-green-600 overflow-hidden">
+                    <thead className="bg-green-600 rounded-t-lg">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Applied On</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {job.applicants.map((applicant, index) => (
+                        <tr key={index} className="hover:bg-green-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{applicant}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{new Date(job.created_at).toLocaleDateString()}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleAcceptApplicant(index)}
+                                className="p-1.5 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
+                                title="Accept"
+                              >
+                                <span role="img" aria-label="Accept">✔️</span>
+                              </button>
+                              <button
+                                onClick={() => handleDeclineApplicant(index)}
+                                className="p-1.5 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+                                title="Decline"
+                              >
+                                <span role="img" aria-label="Decline">🛇</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-gray-600">No applicants yet.</p>
+              )}
+            </motion.div>
+          )}
+
+          {currentUserEmail && currentUserEmail === job.user_email && job.accepted_applicants && job.accepted_applicants.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-12">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Accepted Applicants</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white rounded-lg shadow-lg border border-green-600 overflow-hidden">
+                  <thead className="bg-green-600 rounded-t-lg">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Accepted On</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {job.accepted_applicants.map((applicant, index) => (
+                      <tr key={index} className="hover:bg-green-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{applicant}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{new Date(job.created_at).toLocaleDateString()}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                          <button
+                            onClick={() => handleRemoveAcceptedApplicant(index)}
+                            className="p-1.5 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+                            title="Remove"
+                          >
+                            <FaTrash className="w-4 h-4 text-red-600" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-12 text-center">
             <button onClick={handleApplyForJob} disabled={applying || job.broj_radnika <= 0} className="bg-gradient-to-br from-green-600 to-emerald-500 text-white px-12 py-4 rounded-full text-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
@@ -437,6 +491,18 @@ export default function ViewJob() {
                 Delete Job
               </button>
             </motion.div>
+          )}
+
+          {showLoginPopup && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+              <div className="bg-white p-8 rounded-lg shadow-lg">
+                <h2 className="text-xl font-bold mb-4">Login Required</h2>
+                <p className="mb-4">You need to log in to apply for this job.</p>
+                <button onClick={() => router.push('/login')} className="bg-green-600 text-white px-6 py-2 rounded-full hover:bg-green-700 transition-colors">
+                  Go to Login
+                </button>
+              </div>
+            </div>
           )}
         </motion.div>
       </section>
