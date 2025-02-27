@@ -212,7 +212,7 @@ export default function ViewJob() {
         .update({  applicants: [...(job.applicants || []), applicantName] })
         .eq('id', job.id);
       if (error) throw error;
-      setJob(prev => prev ? { ...prev, broj_radnika: prev.broj_radnika - 1, applicants: [...(prev.applicants || []), applicantName] } : null);
+      setJob(prev => prev ? { ...prev, applicants: [...(prev.applicants || []), applicantName] } : null);
       alert('Application successful! The job poster has been notified.');
     } catch (error: unknown) {
       console.error('Application failed:', error);
