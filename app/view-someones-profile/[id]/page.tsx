@@ -7,7 +7,7 @@ import Image from "next/image";
 import { ShieldCheck, Star, Briefcase, FileText, Bookmark, ClipboardList, UserCheck2, Calendar, Settings } from "lucide-react";
 import supabase from "@/lib/supabase";
 
-const ViewProfile = ({ params }: { params: { uid: string } }) => {
+function ViewSomeonesProfile()  {
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ const ViewProfile = ({ params }: { params: { uid: string } }) => {
     };
 
     fetchUserProfile();
-  }, [params.uid]);
+  },);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
@@ -93,4 +93,4 @@ const StatCard = ({ icon, title, value }: { icon: any; title: string; value: str
   );
 };
 
-export default ViewProfile;
+export default ViewSomeonesProfile;
