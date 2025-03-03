@@ -130,19 +130,46 @@ export default function ViewJob() {
 
   const handleBackToList = () => router.push('/find-jobs');
 
+
   const handleAcceptApplicant = async (index: number) => {
     if (!job || !job.applicants || job.applicants.length <= index) return;
     try {
+      const applicantName = job.applicants[index];
       const updatedBrojRadnika = job.broj_radnika - 1;
       const applicant = job.applicants[index];
       const updatedApplicants = job.applicants.filter((_, i) => i !== index);
-      const updatedAcceptedApplicants = [...(job.accepted_applicants || []), applicant];
+      const updatedAcceptedApplicants = Array.isArray(job.accepted_applicants)
+        ? [...job.accepted_applicants, applicantName]
+        : [applicantName];
+  
+      console.log("Updating job with:", {
+        broj_radnika: updatedBrojRadnika,
+        applicants: updatedApplicants,
+        accepted_applicants: updatedAcceptedApplicants
+      });
+  
       const { error } = await supabase
         .from('jobs')
-        .update({ broj_radnika: updatedBrojRadnika, applicants: updatedApplicants, accepted_applicants: updatedAcceptedApplicants })
+        .update({
+          broj_radnika: updatedBrojRadnika,
+          applicants: updatedApplicants,
+          accepted_applicants: updatedAcceptedApplicants
+        })
         .eq('id', job.id);
-      if (error) throw error;
-      setJob(prev => prev ? { ...prev, broj_radnika: updatedBrojRadnika, applicants: updatedApplicants, accepted_applicants: updatedAcceptedApplicants } : null);
+  
+      if (error) {
+        console.error("Supabase error details:", error);
+        alert(`Error: ${error.message}`);
+        return;
+      }
+  
+      setJob(prev => prev ? {
+        ...prev,
+        broj_radnika: updatedBrojRadnika,
+        applicants: updatedApplicants,
+        accepted_applicants: updatedAcceptedApplicants
+      } : null);
+  
       alert('Applicant accepted successfully!');
     } catch (error) {
       console.error('Error accepting applicant:', error);
@@ -209,7 +236,7 @@ export default function ViewJob() {
       }
       const { error } = await supabase
         .from('jobs')
-        .update({  applicants: [...(job.applicants || []), applicantName] })
+        .update({ applicants: [...(job.applicants || []), applicantName] })
         .eq('id', job.id);
       if (error) throw error;
       setJob(prev => prev ? { ...prev, applicants: [...(prev.applicants || []), applicantName] } : null);
