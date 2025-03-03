@@ -1,8 +1,10 @@
 "use client";
 
+import React, { useMemo } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { Star, Hammer, Sprout, UtensilsCrossed, UserCheck, ShieldCheck, Zap, BadgeDollarSign, CheckCircle } from 'lucide-react';
 import { useRef } from 'react';
+import InteractiveCard from './components/InteractiveCard';
 
 const staggerVariants = {
   hidden: { opacity: 0 },
@@ -110,16 +112,15 @@ export default function HomeClient() {
             </motion.button>
           </div>
 
-          <HeroIllustration />
+          {/* <HeroIllustration /> */}
         </motion.div>
 
         {/* Value Proposition Grid */}
         <motion.div 
-          className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto mb-32 px-4"
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8 mb-20 sm:mb-28 max-w-6xl mx-auto"
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
           variants={staggerVariants}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8 mb-20 sm:mb-28 max-w-6xl mx-auto"
         >
           {[
             { value: '100+', label: 'Daily Gigs Posted', icon: <BadgeDollarSign className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-600" /> },
@@ -137,7 +138,7 @@ export default function HomeClient() {
               <div className="text-emerald-600 mb-4">
                 <CheckCircle className="w-12 h-12" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">{text}</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">{value}</h3>
               <p className="text-gray-600">Real-time connections with trusted local professionals</p>
             </motion.div>
           ))}
