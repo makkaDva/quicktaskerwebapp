@@ -1,4 +1,5 @@
 'use client';
+import { FaUser, FaArrowRight, FaSpinner } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import supabase from '@/lib/supabase';
@@ -7,6 +8,7 @@ import { FaMapMarkerAlt, FaCalendarAlt, FaEnvelope, FaPhoneAlt, FaEuroSign, FaUs
 import dynamic from 'next/dynamic';
 import 'leaflet/dist/leaflet.css';
 import { Spinner } from '@/components/ui/spinner';
+import { Link } from 'lucide-react';
 
 const MapContainer = dynamic(() => import('react-leaflet').then((mod) => mod.MapContainer), { 
   ssr: false,
@@ -253,6 +255,50 @@ export default function ViewJob() {
     }
   };
 
+
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  const handleViewSomeonesProfile = async (email: string) => {
+    try {
+      setProfileLoading(true);
+  
+      // Normalize the email (trim and convert to lowercase)
+      const normalizedEmail = email.trim().toLowerCase();
+  
+      // Query the usersvisible table
+              console.log('Querying email:', email);
+
+        const { data: user, error } = await supabase
+          .from('usersvisible')
+          .select('uid, email, "Display Name"')
+          .eq('email', email)
+          .maybeSingle();
+
+        console.log('Query Result:', user, error);
+      if (error) {
+        console.error('Supabase Error:', error);
+        throw new Error(`Failed to find user: ${error.message}`);
+      }
+  
+      if (!user) {
+        throw new Error('User profile not found');
+      }
+  
+      // Navigate to the profile page using the UID
+      router.push(`/view-someones-profile/${user.uid}`);
+    } catch (error) {
+      console.error('Profile Navigation Error:', error);
+      if (error instanceof Error) {
+        setError(error.message || 'Failed to load profile');
+      } else {
+        setError('Failed to load profile');
+      }
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+
   const handleDeleteJob = async () => {
     if (!job || !currentUserEmail) return;
     const { data: adminData } = await supabase
@@ -391,6 +437,31 @@ export default function ViewJob() {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">Work Hours</h3>
                       <p className="text-gray-600">{job.hours_per_day} hours/day</p>
+                    </div>
+                    {/* Add this section after the work hours block */}
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-green-100 rounded-lg">
+                        <FaUser className="w-6 h-6 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Poster Profile</h3>
+                        {(!currentUserEmail || currentUserEmail !== job.user_email) && (
+                      <div
+                      onClick={() => handleViewSomeonesProfile(job.user_email)}
+                      className={`inline-flex items-center gap-2 ${
+                        profileLoading ? 'opacity-50 cursor-wait' : 
+                        'text-green-600 hover:text-green-700 cursor-pointer'
+                      }`}
+                    >
+                      <span>View poster's profile</span>
+                      {profileLoading ? (
+                        <FaSpinner className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <FaArrowRight className="w-4 h-4" />
+                      )}
+                    </div>
+                    )}
+                      </div>
                     </div>
                   </div>
                 </div>
