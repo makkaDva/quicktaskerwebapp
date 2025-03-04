@@ -1,11 +1,12 @@
 'use client';
-import { ReactNode, Suspense } from "react";
+import { ReactNode } from "react";
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import supabase from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FaMapMarkerAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaCalendarAlt, FaEuroSign, FaFilter } from 'react-icons/fa';
 import { Spinner } from '@/components/ui/spinner';
+import { Suspense } from 'react';
 
 interface Job {
   vrsta_posla: ReactNode;
@@ -117,6 +118,26 @@ function FindJobsContent() {
     return matchesCity && matchesWageType && matchesWageRange && matchesDateRange;
   });
 
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('id, grad, adresa, dnevnica, wage_type, created_at, vrsta_posla, date_to, broj_radnika, user_email'); // Add date_to and user_email here
+
+        if (error) throw error;
+        setJobs(data?.filter((job) => job.id && job.date_to && job.user_email) || []);
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+        setError('Failed to fetch jobs. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex justify-center items-center">
@@ -202,10 +223,8 @@ function FindJobsContent() {
                 }}
               >
                 {job.broj_radnika === 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-2xl">
-                    <span className="text-2xl font-bold text-gray-500 transform -rotate-45">
-                      Popunjeno
-                    </span>
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-200/90 rounded-2xl">
+                    <span className="text-2xl font-bold text-gray-600 -rotate-45">Popunjeno</span>
                   </div>
                 )}
                 <div className="mb-4 flex items-center justify-between">
@@ -270,7 +289,7 @@ function FindJobsContent() {
         className="bg-gradient-to-br from-green-600 to-emerald-500 text-white py-16"
       >
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-6">Can&apos;t Find Your Perfect Job?</h2>
+          <h2 className="text-3xl font-bold mb-6">Can't Find Your Perfect Job?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
             Sign up for job alerts and be the first to know about new opportunities
           </p>
