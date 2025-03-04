@@ -36,7 +36,7 @@ function ViewSomeonesProfile()  {
     };
 
     fetchUserProfile();
-  },);
+  },[id]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
@@ -49,7 +49,7 @@ function ViewSomeonesProfile()  {
             <div className="relative group">
               <div className="w-32 h-32 rounded-2xl border-4 border-green-200 overflow-hidden shadow-lg">
                 <Image
-                  src={userData?.avatar_url || "/basicProfilePicture.jpg"}
+                  src={"/basicProfilePicture.jpg"}
                   alt="Profile"
                   width={128}
                   height={128}
