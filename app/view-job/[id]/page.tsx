@@ -445,22 +445,39 @@ export default function ViewJob() {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">Poster Profile</h3>
-                        {(!currentUserEmail || currentUserEmail !== job.user_email) && (
-                      <div
-                      onClick={() => handleViewSomeonesProfile(job.user_email)}
-                      className={`inline-flex items-center gap-2 ${
-                        profileLoading ? 'opacity-50 cursor-wait' : 
-                        'text-green-600 hover:text-green-700 cursor-pointer'
-                      }`}
-                    >
-                      <span>View poster's profile</span>
-                      {profileLoading ? (
-                        <FaSpinner className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <FaArrowRight className="w-4 h-4" />
-                      )}
-                    </div>
-                    )}
+                        {currentUserEmail === job.user_email ? (
+                            // Case 3: User is logged in and owns the job post
+                            <div
+                              onClick={() => !profileLoading && router.push('/auth/view-profile')}
+                              className={`inline-flex items-center gap-2 ${
+                                profileLoading ? 'opacity-50 cursor-wait' : 
+                                'text-green-600 hover:text-green-700 cursor-pointer'
+                              }`}
+                            >
+                              <span>View your profile</span>
+                              {profileLoading ? (
+                                <FaSpinner className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <FaArrowRight className="w-4 h-4" />
+                              )}
+                            </div>
+                          ) : (
+                            // Cases 1 & 2: User not logged in or different email
+                            <div
+                              onClick={() => !profileLoading && handleViewSomeonesProfile(job.user_email)}
+                              className={`inline-flex items-center gap-2 ${
+                                profileLoading ? 'opacity-50 cursor-wait' : 
+                                'text-green-600 hover:text-green-700 cursor-pointer'
+                              }`}
+                            >
+                              <span>View poster's profile</span>
+                              {profileLoading ? (
+                                <FaSpinner className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <FaArrowRight className="w-4 h-4" />
+                              )}
+                            </div>
+                          )}
                       </div>
                     </div>
                   </div>
