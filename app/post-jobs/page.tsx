@@ -310,7 +310,7 @@ const PostJob = () => {
 
   const submitJob = async (user: any) => {
     const jobData = {
-      grad: selectedCity?.city || '',
+      grad: selectedCity?.city === 'Belgrade' ? 'Beograd' : selectedCity?.city || '',
       adresa: location,
       opis: jobDescription,
       dnevnica: parseFloat(wage),
@@ -333,7 +333,7 @@ const PostJob = () => {
     alert('Job posted successfully!');
     resetForm();
     router.push('/find-jobs');
-  };
+};
 
   const resetForm = () => {
     setStep(1);
