@@ -267,7 +267,7 @@ const ProfilePage: React.FC = () => {
                   <span className={`text-sm font-medium ${
                     darkMode ? 'text-green-400' : 'text-green-800'
                   }`}>
-                    Verified Worker
+                    Verified member
                   </span>
                 </div>
               </div>
