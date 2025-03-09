@@ -19,35 +19,40 @@ export default function JobRatingModal({
   const [jobData, setJobData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
+  const [error, setError] = useState<string | null>(null);
   
 useEffect(() => {
     if (!isOpen) return;
     
     const fetchJobData = async () => {
-        try {
-            // Fetch job details
-            const { data, error } = await supabase
-                .from('jobs')
-                .select(`
-                    id,
-                    title,
-                    worker_id,
-                    workers (
-                        id,
-                        full_name
-                    )
-                `)
-                .eq('id', id)
-                .single();
-            
-            if (!error && data) {
-                setJobData(data);
-            }
-        } catch (err) {
-            console.error('Error fetching job data:', err);
-        } finally {
-            setLoading(false);
-        }
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('jobs')
+          .select(`
+            id,
+            title,
+            client_id,
+            worker_id,
+            workers:worker_id (id, full_name),
+            status,
+            created_at
+          `)
+          .eq('id', id)
+          .single();
+    
+        if (error) throw error;
+        if (!data) throw new Error('Job not found');
+    
+        setJobData(data);
+      } catch (err) {
+        console.error('Error fetching job data:', err);
+        // Handle error state in your UI
+        setError('Failed to load job details');
+      } finally {
+        setLoading(false);
+      }
     };
     
     fetchJobData();

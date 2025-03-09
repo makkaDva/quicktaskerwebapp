@@ -5,9 +5,20 @@ import { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import RatingPage from '../../components/RatingPage';
 import { Loader2 } from 'lucide-react';
+import { isValidUUID } from '@/lib/utils';
+
+interface JobData {
+  id: string;
+  title: string;
+  worker_id: string | null;
+  workers: {
+    id: string;
+    full_name: string;
+  } | null;
+}
 
 export default function RateJobPage({ params }: { params: { jobId: string } }) {
-  const [jobData, setJobData] = useState<any>(null);
+  const [jobData, setJobData] = useState<JobData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClientComponentClient();
@@ -15,28 +26,40 @@ export default function RateJobPage({ params }: { params: { jobId: string } }) {
   useEffect(() => {
     const fetchJobData = async () => {
       try {
-        // Fetch job details
+        setLoading(true);
+        setError(null);
+
+        // Validate UUID format
+        if (!isValidUUID(params.jobId)) {
+          throw new Error('Invalid job ID format');
+        }
+
         const { data: job, error: jobError } = await supabase
           .from('jobs')
           .select(`
             id,
             title,
             worker_id,
-            workers (
+            workers:worker_id (
               id,
               full_name
             )
           `)
           .eq('id', params.jobId)
           .single();
-        
+
         if (jobError) throw jobError;
         if (!job) throw new Error('Job not found');
         
+        // Validate worker relationship
+        if (!job.worker_id || !job.workers) {
+          throw new Error('Worker information not found for this job');
+        }
+
         setJobData(job);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching job data:', err);
-        setError(err.message || 'Failed to load job details');
+        setError(err instanceof Error ? err.message : 'Failed to load job details');
       } finally {
         setLoading(false);
       }
@@ -44,7 +67,7 @@ export default function RateJobPage({ params }: { params: { jobId: string } }) {
     
     fetchJobData();
   }, [params.jobId, supabase]);
-  
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -70,9 +93,9 @@ export default function RateJobPage({ params }: { params: { jobId: string } }) {
   
   return (
     <RatingPage
-      id={params.id}
-      workerId={jobData.worker_id}
-      workerName={jobData.workers.full_name}
+      jobId={params.jobId}
+      userId={jobData.worker_id!}
+      workerName={jobData.workers?.full_name || 'Unknown Worker'}
       jobTitle={jobData.title}
     />
   );
