@@ -62,41 +62,154 @@ function FindJobsContent() {
     fetchUserEmail();
   }, []);
 
+  // Add to your existing useEffect that checks user email
+  type EmployerData = {
+    'Display Name': string; // Define the structure of the response
+  };
+  
+  useEffect(() => {
+    const checkUserRating = async () => {
+      if (!userEmail) return;
+  
+      try {
+        // 1. Check if user needs to rate someone and get id_to_rate
+        const { data: userData, error: userError } = await supabase
+          .from('usersvisible')
+          .select('shouldrate, id_to_rate')
+          .eq('email', userEmail)
+          .single();
+  
+        if (userError) {
+          console.error('User check error:', userError);
+          return;
+        }
+  
+        if (!userData?.shouldrate || !userData.id_to_rate) {
+          console.log('No rating required for user:', userEmail);
+          return;
+        }
+  
+        console.log('Fetching employer data for id:', userData.id_to_rate);
+  
+        // 2. Fetch employer data to get Display Name from usersvisible
+        const { data: employerData, error: employerError } = await supabase
+          .from('usersvisible')
+          .select('"Display Name"') // Use double quotes for column names with spaces
+          .eq('uid', userData.id_to_rate)
+          .single();
+  
+        if (employerError) {
+          console.error('Error fetching employer:', employerError);
+          return;
+        }
+  
+        if (!employerData) {
+          console.error('No employer found with id:', userData.id_to_rate);
+          return;
+        }
+  
+        console.log('Employer data:', employerData);
+  
+        // Extract the Display Name
+        const displayName = employerData['Display Name'] || "Poslodavac";
+  
+        // 3. Show custom alert with buttons
+        const shouldRate = window.confirm(
+          `Molim vas ocenite poslodavca ${displayName}\n\nKliknite OK za ocenjivanje ili Cancel za odbijanje.`
+        );
+  
+        // 4. Handle user choice
+        if (shouldRate) {
+          router.push(`/auth/rate_user/${userData.id_to_rate}`);
+        } else {
+          // Update user's shouldrate status
+          const { error: updateError } = await supabase
+            .from('usersvisible')
+            .update({ shouldrate: false, id_to_rate: null })
+            .eq('email', userEmail);
+  
+          if (updateError) throw updateError;
+        }
+  
+      } catch (error) {
+        console.error('Rating check error:', error);
+      }
+    };
+  
+    checkUserRating();
+  }, [userEmail, router]);
+
   // Fetch jobs and filter out expired ones
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         const { data, error } = await supabase
           .from('jobs')
-          .select('id, grad, adresa, dnevnica, wage_type, created_at, vrsta_posla, date_to, broj_radnika, user_email');
-
+          .select('id, grad, adresa, dnevnica, wage_type, created_at, vrsta_posla, date_to, broj_radnika, user_email, accepted_applicants');
+  
         if (error) throw error;
-
-        // Filter out jobs where date_to has passed
+  
         const currentDate = new Date().toISOString().split('T')[0];
         const validJobs = data?.filter((job) => job.date_to >= currentDate) || [];
-
-        // Update jobs state
-        setJobs(validJobs);
-
-        // Delete expired jobs from the database
         const expiredJobs = data?.filter((job) => job.date_to < currentDate) || [];
+  
+        setJobs(validJobs);
+  
         if (expiredJobs.length > 0) {
+          // Process each expired job individually
+          for (const job of expiredJobs) {
+            // 1. Get job poster's user ID from auth.users
+            const { data: posterUser, error: posterError } = await supabase
+              .from('auth.users')
+              .select('id')
+              .eq('email', job.user_email)
+              .single();
+  
+            if (posterError || !posterUser) continue;
+  
+            // 2. Get applicant emails for this job
+            const applicantEmails = (job.accepted_applicants || [])
+              .map((app: { email: string }) => app.email)
+              .filter(Boolean);
+  
+            if (applicantEmails.length === 0) continue;
+  
+            // 3. Get applicant user IDs from auth.users
+            const { data: applicants, error: applicantsError } = await supabase
+              .from('auth.users')
+              .select('id')
+              .in('email', applicantEmails);
+  
+            if (applicantsError) continue;
+  
+            // 4. Update usersvisible for each applicant
+            const { error: updateError } = await supabase
+              .from('usersvisible')
+              .update({ 
+                shouldrate: true,
+                id_to_rate: posterUser.id 
+              })
+              .in('id', applicants.map(user => user.id));
+  
+            if (updateError) console.error('Update error:', updateError);
+          }
+  
+          // Delete expired jobs after processing
           const { error: deleteError } = await supabase
             .from('jobs')
             .delete()
-            .in('id', expiredJobs.map((job) => job.id));
-
+            .in('id', expiredJobs.map(job => job.id));
+  
           if (deleteError) throw deleteError;
         }
       } catch (error) {
-        console.error('Error fetching jobs:', error);
-        setError('Failed to fetch jobs. Please try again.');
+        console.error('Error processing jobs:', error);
+        setError('Failed to process jobs. Please try again.');
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchJobs();
   }, []);
 
