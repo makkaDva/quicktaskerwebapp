@@ -46,7 +46,7 @@ export default ErrorBoundary;
 // src/components/ErrorMessage.tsx
 'use client';
 
-export default function ErrorMessage({ message }: { message: string }) {
+export function ErrorMessage({ message }: { message: string }) {
   return (
     <div className="p-4 bg-red-50 text-red-700 rounded-lg mb-4">
       <p className="font-medium">Error: {message}</p>
